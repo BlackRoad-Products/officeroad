@@ -1,0 +1,15 @@
+name = "officeroad-blackroad"
+main = "src/worker.js"
+compatibility_date = "2026-03-31"
+
+[ai]
+binding = "AI"
+
+[[routes]]
+pattern = "officeroad.blackroad.io/*"
+zone_name = "blackroad.io"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "officeroad"
+database_id = "9835165b-db3d-41d4-b172-4d9f4ea2857a"

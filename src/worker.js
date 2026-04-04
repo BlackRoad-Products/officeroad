@@ -407,10 +407,7 @@ const ACTIVITIES = [
 const STATUSES = ['working', 'idle', 'meeting', 'break'];
 const MOODS = ['focused', 'energized', 'relaxed', 'intense', 'collaborative', 'contemplative'];
 
-let dbReady = false;
 async function ensureTables(db) {
-  if (dbReady) return;
-  dbReady = true;
   await db.batch([
     db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_agents (
       id TEXT PRIMARY KEY,
@@ -701,6 +698,226 @@ async function ensureTables(db) {
       notes TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Performance Reviews
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_reviews (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL,
+      reviewer TEXT NOT NULL,
+      period TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'quarterly',
+      overall_rating INTEGER DEFAULT 0,
+      strengths TEXT,
+      areas_for_improvement TEXT,
+      goals TEXT,
+      self_assessment TEXT,
+      manager_feedback TEXT,
+      status TEXT DEFAULT 'draft',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_review_goals (
+      id TEXT PRIMARY KEY,
+      review_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      goal TEXT NOT NULL,
+      target_date TEXT,
+      progress INTEGER DEFAULT 0,
+      status TEXT DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Office Planner
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_planner (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL,
+      date TEXT NOT NULL,
+      time_block TEXT NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT,
+      priority TEXT DEFAULT 'medium',
+      category TEXT DEFAULT 'work',
+      completed INTEGER DEFAULT 0,
+      recurring TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_planner_priorities (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL,
+      date TEXT NOT NULL,
+      top_priorities TEXT NOT NULL DEFAULT '[]',
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Training Programs
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_training (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      category TEXT DEFAULT 'general',
+      difficulty TEXT DEFAULT 'beginner',
+      duration_minutes INTEGER DEFAULT 60,
+      instructor TEXT,
+      modules TEXT NOT NULL DEFAULT '[]',
+      max_enrollment INTEGER,
+      status TEXT DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_training_enrollment (
+      id TEXT PRIMARY KEY,
+      training_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      progress INTEGER DEFAULT 0,
+      completed_modules TEXT DEFAULT '[]',
+      score INTEGER,
+      certified INTEGER DEFAULT 0,
+      enrolled_at TEXT NOT NULL DEFAULT (datetime('now')),
+      completed_at TEXT
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_certifications (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL,
+      training_id TEXT NOT NULL,
+      title TEXT NOT NULL,
+      issued_at TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at TEXT
+    )`),
+    // Office Integrations
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_integrations (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL,
+      config TEXT DEFAULT '{}',
+      status TEXT DEFAULT 'active',
+      webhook_url TEXT,
+      api_key_hash TEXT,
+      last_sync TEXT,
+      sync_frequency TEXT DEFAULT 'hourly',
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_integration_logs (
+      id TEXT PRIMARY KEY,
+      integration_id TEXT NOT NULL,
+      action TEXT NOT NULL,
+      status TEXT DEFAULT 'success',
+      details TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Parking System
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_parking_spots (
+      id TEXT PRIMARY KEY,
+      spot_number TEXT NOT NULL UNIQUE,
+      type TEXT DEFAULT 'standard',
+      floor_level TEXT DEFAULT 'B1',
+      status TEXT DEFAULT 'available',
+      assigned_to TEXT,
+      reserved_until TEXT,
+      is_visitor INTEGER DEFAULT 0,
+      is_ev_charging INTEGER DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_parking_reservations (
+      id TEXT PRIMARY KEY,
+      spot_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      vehicle_info TEXT,
+      reserved_date TEXT NOT NULL,
+      start_time TEXT,
+      end_time TEXT,
+      is_visitor INTEGER DEFAULT 0,
+      visitor_name TEXT,
+      status TEXT DEFAULT 'active',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Cafeteria Menu
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_cafeteria_menu (
+      id TEXT PRIMARY KEY,
+      date TEXT NOT NULL,
+      meal_type TEXT NOT NULL DEFAULT 'lunch',
+      item_name TEXT NOT NULL,
+      description TEXT,
+      category TEXT DEFAULT 'main',
+      price REAL DEFAULT 0,
+      calories INTEGER,
+      dietary_tags TEXT DEFAULT '[]',
+      available_quantity INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_cafeteria_orders (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL,
+      menu_item_id TEXT NOT NULL,
+      date TEXT NOT NULL,
+      quantity INTEGER DEFAULT 1,
+      special_requests TEXT,
+      status TEXT DEFAULT 'pending',
+      pickup_time TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_dietary_preferences (
+      id TEXT PRIMARY KEY,
+      agent_name TEXT NOT NULL UNIQUE,
+      preferences TEXT DEFAULT '[]',
+      allergies TEXT DEFAULT '[]',
+      notes TEXT,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Lost & Found
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_lost_found (
+      id TEXT PRIMARY KEY,
+      type TEXT NOT NULL DEFAULT 'lost',
+      item_name TEXT NOT NULL,
+      description TEXT,
+      category TEXT DEFAULT 'other',
+      floor INTEGER,
+      location_detail TEXT,
+      reported_by TEXT NOT NULL,
+      contact_info TEXT,
+      image_url TEXT,
+      status TEXT DEFAULT 'open',
+      matched_with TEXT,
+      claimed_by TEXT,
+      claimed_at TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    // Office Games
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_games (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'trivia',
+      description TEXT,
+      rules TEXT,
+      created_by TEXT NOT NULL,
+      status TEXT DEFAULT 'active',
+      start_date TEXT,
+      end_date TEXT,
+      max_players INTEGER,
+      current_question TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_game_scores (
+      id TEXT PRIMARY KEY,
+      game_id TEXT NOT NULL,
+      agent_name TEXT NOT NULL,
+      score INTEGER DEFAULT 0,
+      answers TEXT DEFAULT '[]',
+      rank INTEGER,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )`),
+    db.prepare(`CREATE TABLE IF NOT EXISTS officeroad_game_challenges (
+      id TEXT PRIMARY KEY,
+      title TEXT NOT NULL,
+      description TEXT,
+      type TEXT DEFAULT 'weekly',
+      points INTEGER DEFAULT 10,
+      start_date TEXT NOT NULL,
+      end_date TEXT NOT NULL,
+      completed_by TEXT DEFAULT '[]',
+      created_by TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )`),
   ]);
 }
@@ -2696,6 +2913,1322 @@ export default {
           alerts: departments.filter(d => d.alert),
         },
       });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Performance Reviews — /api/reviews
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/reviews — list reviews
+    if (path === '/api/reviews' && method === 'GET') {
+      const agent = url.searchParams.get('agent');
+      const period = url.searchParams.get('period');
+      const status = url.searchParams.get('status');
+      let query = 'SELECT * FROM officeroad_reviews';
+      const params = [];
+      const conditions = [];
+      if (agent) { conditions.push('LOWER(agent_name) = LOWER(?)'); params.push(agent); }
+      if (period) { conditions.push('period = ?'); params.push(period); }
+      if (status) { conditions.push('status = ?'); params.push(status); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY created_at DESC LIMIT 50';
+      const reviews = await env.DB.prepare(query).bind(...params).all();
+
+      const enriched = [];
+      for (const review of (reviews.results || [])) {
+        const goals = await env.DB.prepare(
+          'SELECT * FROM officeroad_review_goals WHERE review_id = ? ORDER BY created_at'
+        ).bind(review.id).all();
+        enriched.push({
+          ...review,
+          strengths: review.strengths ? JSON.parse(review.strengths) : [],
+          areas_for_improvement: review.areas_for_improvement ? JSON.parse(review.areas_for_improvement) : [],
+          goals: (goals.results || []),
+        });
+      }
+      return json({ reviews: enriched });
+    }
+
+    // GET /api/reviews/:id — get review detail
+    const reviewDetailMatch = path.match(/^\/api\/reviews\/([^/]+)$/);
+    if (reviewDetailMatch && method === 'GET') {
+      const reviewId = reviewDetailMatch[1];
+      const review = await env.DB.prepare('SELECT * FROM officeroad_reviews WHERE id = ?').bind(reviewId).first();
+      if (!review) return json({ error: 'Review not found' }, 404);
+
+      const goals = await env.DB.prepare(
+        'SELECT * FROM officeroad_review_goals WHERE review_id = ? ORDER BY created_at'
+      ).bind(reviewId).all();
+
+      return json({
+        review: {
+          ...review,
+          strengths: review.strengths ? JSON.parse(review.strengths) : [],
+          areas_for_improvement: review.areas_for_improvement ? JSON.parse(review.areas_for_improvement) : [],
+        },
+        goals: goals.results || [],
+      });
+    }
+
+    // POST /api/reviews — create a performance review
+    if (path === '/api/reviews' && method === 'POST') {
+      const body = await request.json();
+      const { agent_name, reviewer, period, type, overall_rating, strengths, areas_for_improvement, self_assessment, manager_feedback, goals } = body;
+      if (!agent_name || !reviewer || !period) return json({ error: 'agent_name, reviewer, period required' }, 400);
+
+      const reviewId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_reviews (id, agent_name, reviewer, period, type, overall_rating, strengths, areas_for_improvement, self_assessment, manager_feedback, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        reviewId, agent_name, reviewer, period, type || 'quarterly',
+        overall_rating || 0,
+        strengths ? JSON.stringify(strengths) : null,
+        areas_for_improvement ? JSON.stringify(areas_for_improvement) : null,
+        self_assessment || null, manager_feedback || null, 'draft'
+      ).run();
+
+      // Add goals if provided
+      if (goals && Array.isArray(goals)) {
+        const stmts = goals.map(g => env.DB.prepare(
+          'INSERT INTO officeroad_review_goals (id, review_id, agent_name, goal, target_date) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), reviewId, agent_name, g.goal || g, g.target_date || null));
+        if (stmts.length > 0) await env.DB.batch(stmts);
+      }
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), reviewer, 'review_created', `Performance review for ${agent_name} (${period})`, null).run();
+
+      stampChain('review_created', reviewId, `${agent_name} ${period}`);
+      return json({ ok: true, review_id: reviewId, agent_name, period }, 201);
+    }
+
+    // PUT /api/reviews/:id — update a review (self-assessment, manager feedback, finalize)
+    if (reviewDetailMatch && method === 'PUT') {
+      const reviewId = reviewDetailMatch[1];
+      const review = await env.DB.prepare('SELECT * FROM officeroad_reviews WHERE id = ?').bind(reviewId).first();
+      if (!review) return json({ error: 'Review not found' }, 404);
+
+      const body = await request.json();
+      const { overall_rating, strengths, areas_for_improvement, self_assessment, manager_feedback, status } = body;
+
+      await env.DB.prepare(
+        "UPDATE officeroad_reviews SET overall_rating = ?, strengths = ?, areas_for_improvement = ?, self_assessment = ?, manager_feedback = ?, status = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(
+        overall_rating !== undefined ? overall_rating : review.overall_rating,
+        strengths ? JSON.stringify(strengths) : review.strengths,
+        areas_for_improvement ? JSON.stringify(areas_for_improvement) : review.areas_for_improvement,
+        self_assessment !== undefined ? self_assessment : review.self_assessment,
+        manager_feedback !== undefined ? manager_feedback : review.manager_feedback,
+        status || review.status, reviewId
+      ).run();
+
+      return json({ ok: true, review_id: reviewId, status: status || review.status });
+    }
+
+    // POST /api/reviews/:id/goals — add a goal to a review
+    const reviewGoalMatch = path.match(/^\/api\/reviews\/([^/]+)\/goals$/);
+    if (reviewGoalMatch && method === 'POST') {
+      const reviewId = reviewGoalMatch[1];
+      const review = await env.DB.prepare('SELECT * FROM officeroad_reviews WHERE id = ?').bind(reviewId).first();
+      if (!review) return json({ error: 'Review not found' }, 404);
+
+      const body = await request.json();
+      const { goal, target_date } = body;
+      if (!goal) return json({ error: 'goal required' }, 400);
+
+      const goalId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_review_goals (id, review_id, agent_name, goal, target_date) VALUES (?, ?, ?, ?, ?)'
+      ).bind(goalId, reviewId, review.agent_name, goal, target_date || null).run();
+
+      return json({ ok: true, goal_id: goalId, review_id: reviewId }, 201);
+    }
+
+    // PUT /api/reviews/goals/:id — update goal progress
+    const reviewGoalUpdateMatch = path.match(/^\/api\/reviews\/goals\/([^/]+)$/);
+    if (reviewGoalUpdateMatch && method === 'PUT') {
+      const goalId = reviewGoalUpdateMatch[1];
+      const goalEntry = await env.DB.prepare('SELECT * FROM officeroad_review_goals WHERE id = ?').bind(goalId).first();
+      if (!goalEntry) return json({ error: 'Goal not found' }, 404);
+
+      const body = await request.json();
+      const { progress, status } = body;
+
+      await env.DB.prepare(
+        'UPDATE officeroad_review_goals SET progress = ?, status = ? WHERE id = ?'
+      ).bind(
+        progress !== undefined ? Math.min(100, Math.max(0, progress)) : goalEntry.progress,
+        status || goalEntry.status, goalId
+      ).run();
+
+      return json({ ok: true, goal_id: goalId, progress: progress !== undefined ? progress : goalEntry.progress });
+    }
+
+    // GET /api/reviews/summary/:agent — agent review summary across all periods
+    const reviewSummaryMatch = path.match(/^\/api\/reviews\/summary\/([^/]+)$/);
+    if (reviewSummaryMatch && method === 'GET') {
+      const agentName = decodeURIComponent(reviewSummaryMatch[1]);
+      const reviews = await env.DB.prepare(
+        'SELECT * FROM officeroad_reviews WHERE LOWER(agent_name) = LOWER(?) ORDER BY created_at DESC'
+      ).bind(agentName).all();
+
+      const allGoals = await env.DB.prepare(
+        'SELECT * FROM officeroad_review_goals WHERE LOWER(agent_name) = LOWER(?) ORDER BY created_at DESC'
+      ).bind(agentName).all();
+
+      const avgRating = (reviews.results || []).filter(r => r.overall_rating > 0);
+      const average = avgRating.length > 0 ? Math.round((avgRating.reduce((s, r) => s + r.overall_rating, 0) / avgRating.length) * 10) / 10 : null;
+      const activeGoals = (allGoals.results || []).filter(g => g.status === 'active');
+      const completedGoals = (allGoals.results || []).filter(g => g.status === 'completed');
+
+      return json({
+        agent: agentName,
+        total_reviews: (reviews.results || []).length,
+        average_rating: average,
+        active_goals: activeGoals.length,
+        completed_goals: completedGoals.length,
+        reviews: (reviews.results || []).map(r => ({ id: r.id, period: r.period, rating: r.overall_rating, status: r.status })),
+        goals: activeGoals,
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Office Planner — /api/planner
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/planner — get planner entries for an agent/date
+    if (path === '/api/planner' && method === 'GET') {
+      const agent = url.searchParams.get('agent');
+      const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+      const week = url.searchParams.get('week') === 'true';
+      let query = 'SELECT * FROM officeroad_planner';
+      const params = [];
+      const conditions = [];
+      if (agent) { conditions.push('LOWER(agent_name) = LOWER(?)'); params.push(agent); }
+      if (week) {
+        conditions.push('date >= ? AND date <= date(?, \'+6 days\')');
+        params.push(date, date);
+      } else {
+        conditions.push('date = ?');
+        params.push(date);
+      }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY date, time_block';
+      const entries = await env.DB.prepare(query).bind(...params).all();
+
+      // Get priorities for the date
+      let priorities = null;
+      if (agent) {
+        priorities = await env.DB.prepare(
+          'SELECT * FROM officeroad_planner_priorities WHERE LOWER(agent_name) = LOWER(?) AND date = ?'
+        ).bind(agent, date).first();
+        if (priorities) {
+          priorities.top_priorities = JSON.parse(priorities.top_priorities || '[]');
+        }
+      }
+
+      return json({ planner: entries.results || [], date, priorities });
+    }
+
+    // POST /api/planner — add a time block
+    if (path === '/api/planner' && method === 'POST') {
+      const body = await request.json();
+      const { agent_name, date, time_block, title, description, priority, category, recurring } = body;
+      if (!agent_name || !time_block || !title) return json({ error: 'agent_name, time_block, title required' }, 400);
+
+      const entryDate = date || new Date().toISOString().split('T')[0];
+      const entryId = crypto.randomUUID();
+
+      const stmts = [
+        env.DB.prepare(
+          'INSERT INTO officeroad_planner (id, agent_name, date, time_block, title, description, priority, category, recurring) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(entryId, agent_name, entryDate, time_block, title, description || null, priority || 'medium', category || 'work', recurring || null),
+      ];
+
+      // If recurring, create entries for the next 4 weeks
+      if (recurring === 'daily') {
+        for (let i = 1; i <= 6; i++) {
+          const d = new Date(entryDate);
+          d.setDate(d.getDate() + i);
+          stmts.push(env.DB.prepare(
+            'INSERT INTO officeroad_planner (id, agent_name, date, time_block, title, description, priority, category, recurring) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(crypto.randomUUID(), agent_name, d.toISOString().split('T')[0], time_block, title, description || null, priority || 'medium', category || 'work', recurring));
+        }
+      } else if (recurring === 'weekly') {
+        for (let i = 1; i <= 4; i++) {
+          const d = new Date(entryDate);
+          d.setDate(d.getDate() + (7 * i));
+          stmts.push(env.DB.prepare(
+            'INSERT INTO officeroad_planner (id, agent_name, date, time_block, title, description, priority, category, recurring) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+          ).bind(crypto.randomUUID(), agent_name, d.toISOString().split('T')[0], time_block, title, description || null, priority || 'medium', category || 'work', recurring));
+        }
+      }
+
+      await env.DB.batch(stmts);
+      return json({ ok: true, entry_id: entryId, date: entryDate, time_block }, 201);
+    }
+
+    // PUT /api/planner/:id — update a planner entry
+    const plannerUpdateMatch = path.match(/^\/api\/planner\/([^/]+)$/);
+    if (plannerUpdateMatch && method === 'PUT') {
+      const entryId = plannerUpdateMatch[1];
+      const entry = await env.DB.prepare('SELECT * FROM officeroad_planner WHERE id = ?').bind(entryId).first();
+      if (!entry) return json({ error: 'Planner entry not found' }, 404);
+
+      const body = await request.json();
+      const { time_block, title, description, priority, category, completed } = body;
+
+      await env.DB.prepare(
+        'UPDATE officeroad_planner SET time_block = ?, title = ?, description = ?, priority = ?, category = ?, completed = ? WHERE id = ?'
+      ).bind(
+        time_block || entry.time_block, title || entry.title,
+        description !== undefined ? description : entry.description,
+        priority || entry.priority, category || entry.category,
+        completed !== undefined ? (completed ? 1 : 0) : entry.completed, entryId
+      ).run();
+
+      return json({ ok: true, entry_id: entryId, completed: completed !== undefined ? completed : !!entry.completed });
+    }
+
+    // DELETE /api/planner/:id — delete a planner entry
+    if (plannerUpdateMatch && method === 'DELETE') {
+      const entryId = plannerUpdateMatch[1];
+      await env.DB.prepare('DELETE FROM officeroad_planner WHERE id = ?').bind(entryId).run();
+      return json({ ok: true, deleted: entryId });
+    }
+
+    // POST /api/planner/priorities — set daily priorities
+    if (path === '/api/planner/priorities' && method === 'POST') {
+      const body = await request.json();
+      const { agent_name, date, top_priorities, notes } = body;
+      if (!agent_name || !top_priorities) return json({ error: 'agent_name, top_priorities required' }, 400);
+
+      const entryDate = date || new Date().toISOString().split('T')[0];
+      const existing = await env.DB.prepare(
+        'SELECT * FROM officeroad_planner_priorities WHERE LOWER(agent_name) = LOWER(?) AND date = ?'
+      ).bind(agent_name, entryDate).first();
+
+      if (existing) {
+        await env.DB.prepare(
+          "UPDATE officeroad_planner_priorities SET top_priorities = ?, notes = ?, updated_at = datetime('now') WHERE id = ?"
+        ).bind(JSON.stringify(top_priorities), notes || existing.notes, existing.id).run();
+        return json({ ok: true, updated: true, date: entryDate });
+      }
+
+      const prioId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_planner_priorities (id, agent_name, date, top_priorities, notes) VALUES (?, ?, ?, ?, ?)'
+      ).bind(prioId, agent_name, entryDate, JSON.stringify(top_priorities), notes || null).run();
+
+      return json({ ok: true, priority_id: prioId, date: entryDate }, 201);
+    }
+
+    // GET /api/planner/summary — productivity summary for an agent
+    if (path === '/api/planner/summary' && method === 'GET') {
+      const agent = url.searchParams.get('agent');
+      if (!agent) return json({ error: 'agent query param required' }, 400);
+
+      const today = new Date().toISOString().split('T')[0];
+      const todayEntries = await env.DB.prepare(
+        'SELECT * FROM officeroad_planner WHERE LOWER(agent_name) = LOWER(?) AND date = ?'
+      ).bind(agent, today).all();
+
+      const weekEntries = await env.DB.prepare(
+        "SELECT date, COUNT(*) as total, SUM(completed) as done FROM officeroad_planner WHERE LOWER(agent_name) = LOWER(?) AND date >= date('now', '-7 days') GROUP BY date ORDER BY date"
+      ).bind(agent).all();
+
+      const totalToday = (todayEntries.results || []).length;
+      const completedToday = (todayEntries.results || []).filter(e => e.completed).length;
+
+      return json({
+        summary: {
+          agent,
+          today: { total: totalToday, completed: completedToday, completion_rate: totalToday > 0 ? Math.round((completedToday / totalToday) * 100) : 0 },
+          weekly: (weekEntries.results || []).map(w => ({ date: w.date, total: w.total, completed: w.done || 0 })),
+        },
+      });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Training Programs — /api/training
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/training — list training programs
+    if (path === '/api/training' && method === 'GET') {
+      const category = url.searchParams.get('category');
+      const difficulty = url.searchParams.get('difficulty');
+      const status = url.searchParams.get('status') || 'active';
+      let query = 'SELECT * FROM officeroad_training';
+      const params = [];
+      const conditions = [];
+      if (category) { conditions.push('LOWER(category) = LOWER(?)'); params.push(category); }
+      if (difficulty) { conditions.push('difficulty = ?'); params.push(difficulty); }
+      if (status !== 'all') { conditions.push('status = ?'); params.push(status); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY created_at DESC';
+      const training = await env.DB.prepare(query).bind(...params).all();
+
+      const enriched = [];
+      for (const t of (training.results || [])) {
+        const enrollCount = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM officeroad_training_enrollment WHERE training_id = ?'
+        ).bind(t.id).first();
+        const completedCount = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM officeroad_training_enrollment WHERE training_id = ? AND completed_at IS NOT NULL'
+        ).bind(t.id).first();
+        enriched.push({
+          ...t,
+          modules: JSON.parse(t.modules || '[]'),
+          enrolled: enrollCount?.count || 0,
+          completed: completedCount?.count || 0,
+        });
+      }
+      return json({ training: enriched });
+    }
+
+    // GET /api/training/:id — get training with enrollment details
+    const trainingDetailMatch = path.match(/^\/api\/training\/([^/]+)$/);
+    if (trainingDetailMatch && method === 'GET') {
+      const trainingId = trainingDetailMatch[1];
+      const training = await env.DB.prepare('SELECT * FROM officeroad_training WHERE id = ?').bind(trainingId).first();
+      if (!training) return json({ error: 'Training program not found' }, 404);
+
+      const enrollments = await env.DB.prepare(
+        'SELECT * FROM officeroad_training_enrollment WHERE training_id = ? ORDER BY enrolled_at DESC'
+      ).bind(trainingId).all();
+
+      return json({
+        training: { ...training, modules: JSON.parse(training.modules || '[]') },
+        enrollments: (enrollments.results || []).map(e => ({
+          ...e, completed_modules: JSON.parse(e.completed_modules || '[]'),
+        })),
+      });
+    }
+
+    // POST /api/training — create a training program
+    if (path === '/api/training' && method === 'POST') {
+      const body = await request.json();
+      const { title, description, category, difficulty, duration_minutes, instructor, modules, max_enrollment } = body;
+      if (!title) return json({ error: 'title required' }, 400);
+
+      const trainingId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_training (id, title, description, category, difficulty, duration_minutes, instructor, modules, max_enrollment) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        trainingId, title, description || '', category || 'general',
+        difficulty || 'beginner', duration_minutes || 60,
+        instructor || null, modules ? JSON.stringify(modules) : '[]',
+        max_enrollment || null
+      ).run();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), instructor || 'system', 'training_created', `New training: ${title} (${difficulty || 'beginner'})`, 4).run();
+
+      stampChain('training_created', trainingId, title);
+      return json({ ok: true, training_id: trainingId, title }, 201);
+    }
+
+    // POST /api/training/:id/enroll — enroll in a training program
+    const trainingEnrollMatch = path.match(/^\/api\/training\/([^/]+)\/enroll$/);
+    if (trainingEnrollMatch && method === 'POST') {
+      const trainingId = trainingEnrollMatch[1];
+      const training = await env.DB.prepare('SELECT * FROM officeroad_training WHERE id = ?').bind(trainingId).first();
+      if (!training) return json({ error: 'Training program not found' }, 404);
+
+      const body = await request.json();
+      const { agent_name } = body;
+      if (!agent_name) return json({ error: 'agent_name required' }, 400);
+
+      // Check already enrolled
+      const existing = await env.DB.prepare(
+        'SELECT * FROM officeroad_training_enrollment WHERE training_id = ? AND LOWER(agent_name) = LOWER(?)'
+      ).bind(trainingId, agent_name).first();
+      if (existing) return json({ error: 'Already enrolled', enrollment_id: existing.id }, 409);
+
+      // Check capacity
+      if (training.max_enrollment) {
+        const count = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM officeroad_training_enrollment WHERE training_id = ?'
+        ).bind(trainingId).first();
+        if ((count?.count || 0) >= training.max_enrollment) return json({ error: 'Training is full' }, 400);
+      }
+
+      const enrollId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_training_enrollment (id, training_id, agent_name) VALUES (?, ?, ?)'
+      ).bind(enrollId, trainingId, agent_name).run();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), agent_name, 'training_enrolled', `Enrolled in: ${training.title}`, 4).run();
+
+      return json({ ok: true, enrollment_id: enrollId, training: training.title }, 201);
+    }
+
+    // PUT /api/training/:id/progress — update progress for an enrollment
+    const trainingProgressMatch = path.match(/^\/api\/training\/([^/]+)\/progress$/);
+    if (trainingProgressMatch && method === 'PUT') {
+      const trainingId = trainingProgressMatch[1];
+      const body = await request.json();
+      const { agent_name, progress, completed_module, score } = body;
+      if (!agent_name) return json({ error: 'agent_name required' }, 400);
+
+      const enrollment = await env.DB.prepare(
+        'SELECT * FROM officeroad_training_enrollment WHERE training_id = ? AND LOWER(agent_name) = LOWER(?)'
+      ).bind(trainingId, agent_name).first();
+      if (!enrollment) return json({ error: 'Not enrolled in this training' }, 404);
+
+      const completedModules = JSON.parse(enrollment.completed_modules || '[]');
+      if (completed_module && !completedModules.includes(completed_module)) {
+        completedModules.push(completed_module);
+      }
+
+      const training = await env.DB.prepare('SELECT * FROM officeroad_training WHERE id = ?').bind(trainingId).first();
+      const totalModules = training ? JSON.parse(training.modules || '[]').length : 1;
+      const newProgress = progress !== undefined ? progress : Math.round((completedModules.length / Math.max(totalModules, 1)) * 100);
+      const isComplete = newProgress >= 100;
+
+      const stmts = [
+        env.DB.prepare(
+          'UPDATE officeroad_training_enrollment SET progress = ?, completed_modules = ?, score = ?, completed_at = ? WHERE id = ?'
+        ).bind(
+          Math.min(100, newProgress), JSON.stringify(completedModules),
+          score !== undefined ? score : enrollment.score,
+          isComplete && !enrollment.completed_at ? new Date().toISOString() : enrollment.completed_at,
+          enrollment.id
+        ),
+      ];
+
+      // Issue certification on completion
+      if (isComplete && !enrollment.completed_at && training) {
+        stmts.push(env.DB.prepare(
+          'INSERT INTO officeroad_certifications (id, agent_name, training_id, title) VALUES (?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), agent_name, trainingId, training.title));
+        stmts.push(env.DB.prepare(
+          'UPDATE officeroad_training_enrollment SET certified = 1 WHERE id = ?'
+        ).bind(enrollment.id));
+        stmts.push(env.DB.prepare(
+          'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), agent_name, 'training_completed', `Completed training: ${training.title}`, 4));
+        earnCoin(agent_name, 'training_completed', 0.1);
+      }
+
+      await env.DB.batch(stmts);
+      return json({ ok: true, progress: Math.min(100, newProgress), completed: isComplete, certified: isComplete && !enrollment.completed_at });
+    }
+
+    // GET /api/training/certifications — list certifications
+    if (path === '/api/training/certifications' && method === 'GET') {
+      const agent = url.searchParams.get('agent');
+      let query = 'SELECT * FROM officeroad_certifications';
+      if (agent) query += ' WHERE LOWER(agent_name) = LOWER(?)';
+      query += ' ORDER BY issued_at DESC';
+      const certs = agent
+        ? await env.DB.prepare(query).bind(agent).all()
+        : await env.DB.prepare(query).all();
+      return json({ certifications: certs.results || [] });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Office Integrations — /api/integrations
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/integrations — list all integrations
+    if (path === '/api/integrations' && method === 'GET') {
+      const type = url.searchParams.get('type');
+      const status = url.searchParams.get('status');
+      let query = 'SELECT id, name, type, status, webhook_url, last_sync, sync_frequency, created_by, created_at, updated_at FROM officeroad_integrations';
+      const params = [];
+      const conditions = [];
+      if (type) { conditions.push('type = ?'); params.push(type); }
+      if (status) { conditions.push('status = ?'); params.push(status); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY name';
+      const integrations = await env.DB.prepare(query).bind(...params).all();
+      return json({ integrations: integrations.results || [] });
+    }
+
+    // GET /api/integrations/:id — get integration details with recent logs
+    const integrationDetailMatch = path.match(/^\/api\/integrations\/([^/]+)$/);
+    if (integrationDetailMatch && method === 'GET') {
+      const intId = integrationDetailMatch[1];
+      const integration = await env.DB.prepare(
+        'SELECT id, name, type, config, status, webhook_url, last_sync, sync_frequency, created_by, created_at, updated_at FROM officeroad_integrations WHERE id = ?'
+      ).bind(intId).first();
+      if (!integration) return json({ error: 'Integration not found' }, 404);
+
+      const logs = await env.DB.prepare(
+        'SELECT * FROM officeroad_integration_logs WHERE integration_id = ? ORDER BY created_at DESC LIMIT 20'
+      ).bind(intId).all();
+
+      return json({
+        integration: { ...integration, config: JSON.parse(integration.config || '{}') },
+        logs: logs.results || [],
+      });
+    }
+
+    // POST /api/integrations — create an integration
+    if (path === '/api/integrations' && method === 'POST') {
+      const body = await request.json();
+      const { name, type, config, webhook_url, sync_frequency, created_by } = body;
+      if (!name || !type || !created_by) return json({ error: 'name, type, created_by required' }, 400);
+
+      const validTypes = ['calendar', 'email', 'chat', 'crm', 'analytics', 'notification', 'webhook', 'custom'];
+      if (!validTypes.includes(type)) return json({ error: `Invalid type. Options: ${validTypes.join(', ')}` }, 400);
+
+      const intId = crypto.randomUUID();
+      await env.DB.batch([
+        env.DB.prepare(
+          'INSERT INTO officeroad_integrations (id, name, type, config, webhook_url, sync_frequency, created_by) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(intId, name, type, config ? JSON.stringify(config) : '{}', webhook_url || null, sync_frequency || 'hourly', created_by),
+        env.DB.prepare(
+          'INSERT INTO officeroad_integration_logs (id, integration_id, action, status, details) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), intId, 'created', 'success', `Integration "${name}" (${type}) created by ${created_by}`),
+        env.DB.prepare(
+          'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), created_by, 'integration_created', `New integration: ${name} (${type})`, null),
+      ]);
+
+      stampChain('integration_created', intId, name);
+      return json({ ok: true, integration_id: intId, name, type }, 201);
+    }
+
+    // PUT /api/integrations/:id — update an integration
+    if (integrationDetailMatch && method === 'PUT') {
+      const intId = integrationDetailMatch[1];
+      const integration = await env.DB.prepare('SELECT * FROM officeroad_integrations WHERE id = ?').bind(intId).first();
+      if (!integration) return json({ error: 'Integration not found' }, 404);
+
+      const body = await request.json();
+      const { name, config, status, webhook_url, sync_frequency } = body;
+
+      await env.DB.prepare(
+        "UPDATE officeroad_integrations SET name = ?, config = ?, status = ?, webhook_url = ?, sync_frequency = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(
+        name || integration.name,
+        config ? JSON.stringify(config) : integration.config,
+        status || integration.status,
+        webhook_url !== undefined ? webhook_url : integration.webhook_url,
+        sync_frequency || integration.sync_frequency, intId
+      ).run();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_integration_logs (id, integration_id, action, status, details) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), intId, 'updated', 'success', `Integration updated`).run();
+
+      return json({ ok: true, integration_id: intId });
+    }
+
+    // POST /api/integrations/:id/sync — trigger a sync
+    const integrationSyncMatch = path.match(/^\/api\/integrations\/([^/]+)\/sync$/);
+    if (integrationSyncMatch && method === 'POST') {
+      const intId = integrationSyncMatch[1];
+      const integration = await env.DB.prepare('SELECT * FROM officeroad_integrations WHERE id = ?').bind(intId).first();
+      if (!integration) return json({ error: 'Integration not found' }, 404);
+      if (integration.status !== 'active') return json({ error: 'Integration is not active' }, 400);
+
+      // Log the sync attempt
+      await env.DB.batch([
+        env.DB.prepare(
+          "UPDATE officeroad_integrations SET last_sync = datetime('now'), updated_at = datetime('now') WHERE id = ?"
+        ).bind(intId),
+        env.DB.prepare(
+          'INSERT INTO officeroad_integration_logs (id, integration_id, action, status, details) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), intId, 'sync', 'success', `Manual sync triggered for ${integration.name}`),
+      ]);
+
+      // If webhook, attempt to call it
+      if (integration.webhook_url) {
+        try {
+          await fetch(integration.webhook_url, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event: 'sync', integration_id: intId, name: integration.name, timestamp: new Date().toISOString() }),
+          });
+        } catch (e) {
+          await env.DB.prepare(
+            'INSERT INTO officeroad_integration_logs (id, integration_id, action, status, details) VALUES (?, ?, ?, ?, ?)'
+          ).bind(crypto.randomUUID(), intId, 'webhook_call', 'error', `Webhook failed: ${e.message}`).run();
+        }
+      }
+
+      return json({ ok: true, integration_id: intId, synced_at: new Date().toISOString() });
+    }
+
+    // DELETE /api/integrations/:id — remove an integration
+    if (integrationDetailMatch && method === 'DELETE') {
+      const intId = integrationDetailMatch[1];
+      await env.DB.batch([
+        env.DB.prepare('DELETE FROM officeroad_integrations WHERE id = ?').bind(intId),
+        env.DB.prepare('DELETE FROM officeroad_integration_logs WHERE integration_id = ?').bind(intId),
+      ]);
+      return json({ ok: true, deleted: intId });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Parking System — /api/parking
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/parking — list parking spots
+    if (path === '/api/parking' && method === 'GET') {
+      const level = url.searchParams.get('level');
+      const status = url.searchParams.get('status');
+      const type = url.searchParams.get('type');
+      let query = 'SELECT * FROM officeroad_parking_spots';
+      const params = [];
+      const conditions = [];
+      if (level) { conditions.push('floor_level = ?'); params.push(level); }
+      if (status) { conditions.push('status = ?'); params.push(status); }
+      if (type) { conditions.push('type = ?'); params.push(type); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY spot_number';
+      const spots = await env.DB.prepare(query).bind(...params).all();
+
+      // Get today's reservations
+      const today = new Date().toISOString().split('T')[0];
+      const reservations = await env.DB.prepare(
+        "SELECT * FROM officeroad_parking_reservations WHERE reserved_date = ? AND status = 'active'"
+      ).bind(today).all();
+
+      const reservationMap = {};
+      for (const r of (reservations.results || [])) {
+        reservationMap[r.spot_id] = r;
+      }
+
+      const enriched = (spots.results || []).map(s => ({
+        ...s,
+        today_reservation: reservationMap[s.id] || null,
+      }));
+
+      const available = enriched.filter(s => s.status === 'available' && !s.today_reservation).length;
+      const total = enriched.length;
+
+      return json({ spots: enriched, total, available, occupancy_rate: total > 0 ? Math.round(((total - available) / total) * 100) : 0 });
+    }
+
+    // POST /api/parking/spots — add parking spots (bulk)
+    if (path === '/api/parking/spots' && method === 'POST') {
+      const body = await request.json();
+      const { spots } = body;
+      if (!spots || !Array.isArray(spots)) return json({ error: 'spots array required' }, 400);
+
+      const stmts = spots.map(s => env.DB.prepare(
+        'INSERT OR IGNORE INTO officeroad_parking_spots (id, spot_number, type, floor_level, is_visitor, is_ev_charging) VALUES (?, ?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), s.spot_number, s.type || 'standard', s.floor_level || 'B1', s.is_visitor ? 1 : 0, s.is_ev_charging ? 1 : 0));
+
+      if (stmts.length > 0) await env.DB.batch(stmts);
+      return json({ ok: true, created: stmts.length }, 201);
+    }
+
+    // POST /api/parking/reserve — reserve a parking spot
+    if (path === '/api/parking/reserve' && method === 'POST') {
+      const body = await request.json();
+      const { spot_id, agent_name, vehicle_info, reserved_date, start_time, end_time, is_visitor, visitor_name } = body;
+      if (!agent_name || !reserved_date) return json({ error: 'agent_name, reserved_date required' }, 400);
+
+      let spotToReserve = spot_id;
+
+      // If no specific spot, find an available one
+      if (!spotToReserve) {
+        const isVisitor = is_visitor ? 1 : 0;
+        const availableSpot = await env.DB.prepare(
+          "SELECT s.* FROM officeroad_parking_spots s WHERE s.status = 'available' AND s.is_visitor = ? AND s.id NOT IN (SELECT spot_id FROM officeroad_parking_reservations WHERE reserved_date = ? AND status = 'active') ORDER BY s.spot_number LIMIT 1"
+        ).bind(isVisitor, reserved_date).first();
+
+        if (!availableSpot) return json({ error: 'No available parking spots' }, 400);
+        spotToReserve = availableSpot.id;
+      }
+
+      // Check for existing reservation on the spot for that date
+      const existing = await env.DB.prepare(
+        "SELECT * FROM officeroad_parking_reservations WHERE spot_id = ? AND reserved_date = ? AND status = 'active'"
+      ).bind(spotToReserve, reserved_date).first();
+      if (existing) return json({ error: 'Spot already reserved for this date', reserved_by: existing.agent_name }, 409);
+
+      const resId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_parking_reservations (id, spot_id, agent_name, vehicle_info, reserved_date, start_time, end_time, is_visitor, visitor_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(resId, spotToReserve, agent_name, vehicle_info || null, reserved_date, start_time || null, end_time || null, is_visitor ? 1 : 0, visitor_name || null).run();
+
+      const spot = await env.DB.prepare('SELECT * FROM officeroad_parking_spots WHERE id = ?').bind(spotToReserve).first();
+      stampChain('parking_reserved', resId, `${agent_name} spot ${spot?.spot_number || spotToReserve}`);
+
+      return json({ ok: true, reservation_id: resId, spot_id: spotToReserve, spot_number: spot?.spot_number, date: reserved_date }, 201);
+    }
+
+    // DELETE /api/parking/reserve/:id — cancel a reservation
+    const parkingCancelMatch = path.match(/^\/api\/parking\/reserve\/([^/]+)$/);
+    if (parkingCancelMatch && method === 'DELETE') {
+      const resId = parkingCancelMatch[1];
+      await env.DB.prepare("UPDATE officeroad_parking_reservations SET status = 'cancelled' WHERE id = ?").bind(resId).run();
+      return json({ ok: true, cancelled: resId });
+    }
+
+    // GET /api/parking/reservations — list reservations for a date
+    if (path === '/api/parking/reservations' && method === 'GET') {
+      const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+      const agent = url.searchParams.get('agent');
+      let query = "SELECT r.*, s.spot_number, s.floor_level, s.type as spot_type FROM officeroad_parking_reservations r LEFT JOIN officeroad_parking_spots s ON r.spot_id = s.id WHERE r.reserved_date = ? AND r.status = 'active'";
+      const params = [date];
+      if (agent) { query += ' AND LOWER(r.agent_name) = LOWER(?)'; params.push(agent); }
+      query += ' ORDER BY s.spot_number';
+      const reservations = await env.DB.prepare(query).bind(...params).all();
+      return json({ reservations: reservations.results || [], date });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Cafeteria Menu — /api/cafeteria
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/cafeteria — get today's menu
+    if (path === '/api/cafeteria' && method === 'GET') {
+      const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+      const meal = url.searchParams.get('meal');
+      let query = 'SELECT * FROM officeroad_cafeteria_menu WHERE date = ?';
+      const params = [date];
+      if (meal) { query += ' AND meal_type = ?'; params.push(meal); }
+      query += ' ORDER BY meal_type, category, item_name';
+      const menu = await env.DB.prepare(query).bind(...params).all();
+
+      // Get order counts for each item
+      const orders = await env.DB.prepare(
+        "SELECT menu_item_id, COUNT(*) as count, SUM(quantity) as total_qty FROM officeroad_cafeteria_orders WHERE date = ? AND status != 'cancelled' GROUP BY menu_item_id"
+      ).bind(date).all();
+      const orderMap = {};
+      for (const o of (orders.results || [])) orderMap[o.menu_item_id] = { orders: o.count, quantity: o.total_qty };
+
+      const enriched = (menu.results || []).map(m => ({
+        ...m,
+        dietary_tags: JSON.parse(m.dietary_tags || '[]'),
+        order_count: orderMap[m.id]?.orders || 0,
+        total_ordered: orderMap[m.id]?.quantity || 0,
+        sold_out: m.available_quantity !== null && m.available_quantity !== undefined && (orderMap[m.id]?.quantity || 0) >= m.available_quantity,
+      }));
+
+      return json({ menu: enriched, date });
+    }
+
+    // POST /api/cafeteria/menu — add menu items
+    if (path === '/api/cafeteria/menu' && method === 'POST') {
+      const body = await request.json();
+      const { items, date } = body;
+      if (!items || !Array.isArray(items)) return json({ error: 'items array required' }, 400);
+
+      const menuDate = date || new Date().toISOString().split('T')[0];
+      const stmts = items.map(item => env.DB.prepare(
+        'INSERT INTO officeroad_cafeteria_menu (id, date, meal_type, item_name, description, category, price, calories, dietary_tags, available_quantity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        crypto.randomUUID(), menuDate, item.meal_type || 'lunch',
+        item.item_name, item.description || null, item.category || 'main',
+        item.price || 0, item.calories || null,
+        item.dietary_tags ? JSON.stringify(item.dietary_tags) : '[]',
+        item.available_quantity || null
+      ));
+
+      if (stmts.length > 0) await env.DB.batch(stmts);
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), 'system', 'menu_updated', `${items.length} items added to ${menuDate} menu`, 0).run();
+
+      return json({ ok: true, items_added: items.length, date: menuDate }, 201);
+    }
+
+    // POST /api/cafeteria/order — place a pre-order
+    if (path === '/api/cafeteria/order' && method === 'POST') {
+      const body = await request.json();
+      const { agent_name, menu_item_id, quantity, special_requests, pickup_time } = body;
+      if (!agent_name || !menu_item_id) return json({ error: 'agent_name, menu_item_id required' }, 400);
+
+      const menuItem = await env.DB.prepare('SELECT * FROM officeroad_cafeteria_menu WHERE id = ?').bind(menu_item_id).first();
+      if (!menuItem) return json({ error: 'Menu item not found' }, 404);
+
+      // Check availability
+      if (menuItem.available_quantity !== null && menuItem.available_quantity !== undefined) {
+        const ordered = await env.DB.prepare(
+          "SELECT SUM(quantity) as total FROM officeroad_cafeteria_orders WHERE menu_item_id = ? AND date = ? AND status != 'cancelled'"
+        ).bind(menu_item_id, menuItem.date).first();
+        if ((ordered?.total || 0) + (quantity || 1) > menuItem.available_quantity) {
+          return json({ error: 'Item is sold out or insufficient quantity' }, 400);
+        }
+      }
+
+      const orderId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_cafeteria_orders (id, agent_name, menu_item_id, date, quantity, special_requests, pickup_time) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      ).bind(orderId, agent_name, menu_item_id, menuItem.date, quantity || 1, special_requests || null, pickup_time || null).run();
+
+      return json({ ok: true, order_id: orderId, item: menuItem.item_name, quantity: quantity || 1, date: menuItem.date }, 201);
+    }
+
+    // GET /api/cafeteria/orders — get orders for a date or agent
+    if (path === '/api/cafeteria/orders' && method === 'GET') {
+      const date = url.searchParams.get('date') || new Date().toISOString().split('T')[0];
+      const agent = url.searchParams.get('agent');
+      let query = 'SELECT o.*, m.item_name, m.meal_type, m.price, m.category FROM officeroad_cafeteria_orders o LEFT JOIN officeroad_cafeteria_menu m ON o.menu_item_id = m.id WHERE o.date = ?';
+      const params = [date];
+      if (agent) { query += ' AND LOWER(o.agent_name) = LOWER(?)'; params.push(agent); }
+      query += ' ORDER BY o.created_at DESC';
+      const orders = await env.DB.prepare(query).bind(...params).all();
+      return json({ orders: orders.results || [], date });
+    }
+
+    // PUT /api/cafeteria/order/:id — update order status
+    const cafeteriaOrderUpdateMatch = path.match(/^\/api\/cafeteria\/order\/([^/]+)$/);
+    if (cafeteriaOrderUpdateMatch && method === 'PUT') {
+      const orderId = cafeteriaOrderUpdateMatch[1];
+      const body = await request.json();
+      const { status } = body;
+      if (!status || !['pending', 'preparing', 'ready', 'picked_up', 'cancelled'].includes(status)) {
+        return json({ error: 'status must be pending, preparing, ready, picked_up, or cancelled' }, 400);
+      }
+      await env.DB.prepare('UPDATE officeroad_cafeteria_orders SET status = ? WHERE id = ?').bind(status, orderId).run();
+      return json({ ok: true, order_id: orderId, status });
+    }
+
+    // GET /api/cafeteria/preferences/:agent — get dietary preferences
+    const dietaryPrefMatch = path.match(/^\/api\/cafeteria\/preferences\/([^/]+)$/);
+    if (dietaryPrefMatch && method === 'GET') {
+      const agentName = decodeURIComponent(dietaryPrefMatch[1]);
+      const prefs = await env.DB.prepare(
+        'SELECT * FROM officeroad_dietary_preferences WHERE LOWER(agent_name) = LOWER(?)'
+      ).bind(agentName).first();
+      if (!prefs) return json({ agent: agentName, preferences: [], allergies: [], notes: null });
+      return json({
+        agent: agentName,
+        preferences: JSON.parse(prefs.preferences || '[]'),
+        allergies: JSON.parse(prefs.allergies || '[]'),
+        notes: prefs.notes,
+      });
+    }
+
+    // PUT /api/cafeteria/preferences/:agent — set dietary preferences
+    if (dietaryPrefMatch && method === 'PUT') {
+      const agentName = decodeURIComponent(dietaryPrefMatch[1]);
+      const body = await request.json();
+      const { preferences, allergies, notes } = body;
+
+      const existing = await env.DB.prepare(
+        'SELECT * FROM officeroad_dietary_preferences WHERE LOWER(agent_name) = LOWER(?)'
+      ).bind(agentName).first();
+
+      if (existing) {
+        await env.DB.prepare(
+          "UPDATE officeroad_dietary_preferences SET preferences = ?, allergies = ?, notes = ?, updated_at = datetime('now') WHERE id = ?"
+        ).bind(
+          preferences ? JSON.stringify(preferences) : existing.preferences,
+          allergies ? JSON.stringify(allergies) : existing.allergies,
+          notes !== undefined ? notes : existing.notes, existing.id
+        ).run();
+      } else {
+        await env.DB.prepare(
+          'INSERT INTO officeroad_dietary_preferences (id, agent_name, preferences, allergies, notes) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), agentName, preferences ? JSON.stringify(preferences) : '[]', allergies ? JSON.stringify(allergies) : '[]', notes || null).run();
+      }
+
+      return json({ ok: true, agent: agentName });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Lost & Found — /api/lost-found
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/lost-found — list lost/found items
+    if (path === '/api/lost-found' && method === 'GET') {
+      const type = url.searchParams.get('type');
+      const status = url.searchParams.get('status') || 'open';
+      const category = url.searchParams.get('category');
+      const q = url.searchParams.get('q');
+      let query = 'SELECT * FROM officeroad_lost_found';
+      const params = [];
+      const conditions = [];
+      if (type) { conditions.push('type = ?'); params.push(type); }
+      if (status !== 'all') { conditions.push('status = ?'); params.push(status); }
+      if (category) { conditions.push('category = ?'); params.push(category); }
+      if (q) { conditions.push('(LOWER(item_name) LIKE ? OR LOWER(description) LIKE ?)'); params.push(`%${q.toLowerCase()}%`, `%${q.toLowerCase()}%`); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY created_at DESC LIMIT 50';
+      const items = await env.DB.prepare(query).bind(...params).all();
+      return json({ items: items.results || [] });
+    }
+
+    // GET /api/lost-found/:id — get item detail
+    const lostFoundDetailMatch = path.match(/^\/api\/lost-found\/([^/]+)$/);
+    if (lostFoundDetailMatch && method === 'GET') {
+      const itemId = lostFoundDetailMatch[1];
+      const item = await env.DB.prepare('SELECT * FROM officeroad_lost_found WHERE id = ?').bind(itemId).first();
+      if (!item) return json({ error: 'Item not found' }, 404);
+
+      // Find potential matches
+      const matchType = item.type === 'lost' ? 'found' : 'lost';
+      const matches = await env.DB.prepare(
+        "SELECT * FROM officeroad_lost_found WHERE type = ? AND status = 'open' AND (LOWER(item_name) LIKE ? OR LOWER(category) = LOWER(?)) AND id != ? LIMIT 5"
+      ).bind(matchType, `%${item.item_name.toLowerCase().split(' ')[0]}%`, item.category, item.id).all();
+
+      return json({ item, potential_matches: matches.results || [] });
+    }
+
+    // POST /api/lost-found — report a lost or found item
+    if (path === '/api/lost-found' && method === 'POST') {
+      const body = await request.json();
+      const { type, item_name, description, category, floor, location_detail, reported_by, contact_info, image_url } = body;
+      if (!item_name || !reported_by) return json({ error: 'item_name, reported_by required' }, 400);
+      if (type && !['lost', 'found'].includes(type)) return json({ error: 'type must be lost or found' }, 400);
+
+      const itemId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_lost_found (id, type, item_name, description, category, floor, location_detail, reported_by, contact_info, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        itemId, type || 'lost', item_name, description || null,
+        category || 'other', floor !== undefined ? floor : null,
+        location_detail || null, reported_by, contact_info || null, image_url || null
+      ).run();
+
+      // Auto-match: search for potential matches
+      const matchType = (type || 'lost') === 'lost' ? 'found' : 'lost';
+      const matches = await env.DB.prepare(
+        "SELECT * FROM officeroad_lost_found WHERE type = ? AND status = 'open' AND (LOWER(item_name) LIKE ? OR LOWER(category) = ?) LIMIT 3"
+      ).bind(matchType, `%${item_name.toLowerCase().split(' ')[0]}%`, (category || 'other').toLowerCase()).all();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), reported_by, `${type || 'lost'}_reported`, `${type || 'Lost'}: ${item_name}`, floor || 0).run();
+
+      stampChain(`${type || 'lost'}_reported`, itemId, item_name);
+      return json({
+        ok: true, item_id: itemId, type: type || 'lost', item_name,
+        potential_matches: (matches.results || []).length > 0 ? matches.results : null,
+      }, 201);
+    }
+
+    // PUT /api/lost-found/:id/claim — claim a found item or mark lost item as found
+    const lostFoundClaimMatch = path.match(/^\/api\/lost-found\/([^/]+)\/claim$/);
+    if (lostFoundClaimMatch && method === 'PUT') {
+      const itemId = lostFoundClaimMatch[1];
+      const item = await env.DB.prepare('SELECT * FROM officeroad_lost_found WHERE id = ?').bind(itemId).first();
+      if (!item) return json({ error: 'Item not found' }, 404);
+      if (item.status !== 'open') return json({ error: 'Item is no longer available' }, 400);
+
+      const body = await request.json();
+      const { claimed_by, matched_with } = body;
+      if (!claimed_by) return json({ error: 'claimed_by required' }, 400);
+
+      await env.DB.prepare(
+        "UPDATE officeroad_lost_found SET status = 'claimed', claimed_by = ?, claimed_at = datetime('now'), matched_with = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(claimed_by, matched_with || null, itemId).run();
+
+      // If matched with another item, close that too
+      if (matched_with) {
+        await env.DB.prepare(
+          "UPDATE officeroad_lost_found SET status = 'matched', matched_with = ?, updated_at = datetime('now') WHERE id = ?"
+        ).bind(itemId, matched_with).run();
+      }
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), claimed_by, 'item_claimed', `Claimed: ${item.item_name}`, item.floor).run();
+
+      return json({ ok: true, item_id: itemId, claimed_by, status: 'claimed' });
+    }
+
+    // PUT /api/lost-found/:id — update item status
+    if (lostFoundDetailMatch && method === 'PUT') {
+      const itemId = lostFoundDetailMatch[1];
+      const item = await env.DB.prepare('SELECT * FROM officeroad_lost_found WHERE id = ?').bind(itemId).first();
+      if (!item) return json({ error: 'Item not found' }, 404);
+
+      const body = await request.json();
+      const { status, description, location_detail } = body;
+
+      await env.DB.prepare(
+        "UPDATE officeroad_lost_found SET status = ?, description = ?, location_detail = ?, updated_at = datetime('now') WHERE id = ?"
+      ).bind(
+        status || item.status,
+        description !== undefined ? description : item.description,
+        location_detail !== undefined ? location_detail : item.location_detail, itemId
+      ).run();
+
+      return json({ ok: true, item_id: itemId, status: status || item.status });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // NEW FEATURE: Office Games — /api/games
+    // ═══════════════════════════════════════════════════════════
+
+    // GET /api/games — list games
+    if (path === '/api/games' && method === 'GET') {
+      const type = url.searchParams.get('type');
+      const status = url.searchParams.get('status') || 'active';
+      let query = 'SELECT * FROM officeroad_games';
+      const params = [];
+      const conditions = [];
+      if (type) { conditions.push('type = ?'); params.push(type); }
+      if (status !== 'all') { conditions.push('status = ?'); params.push(status); }
+      if (conditions.length) query += ' WHERE ' + conditions.join(' AND ');
+      query += ' ORDER BY created_at DESC';
+      const games = await env.DB.prepare(query).bind(...params).all();
+
+      const enriched = [];
+      for (const game of (games.results || [])) {
+        const playerCount = await env.DB.prepare(
+          'SELECT COUNT(DISTINCT agent_name) as count FROM officeroad_game_scores WHERE game_id = ?'
+        ).bind(game.id).first();
+        const topScores = await env.DB.prepare(
+          'SELECT agent_name, score FROM officeroad_game_scores WHERE game_id = ? ORDER BY score DESC LIMIT 5'
+        ).bind(game.id).all();
+        enriched.push({
+          ...game,
+          players: playerCount?.count || 0,
+          top_scores: topScores.results || [],
+        });
+      }
+      return json({ games: enriched });
+    }
+
+    // GET /api/games/:id — get game details with leaderboard
+    const gameDetailMatch = path.match(/^\/api\/games\/([^/]+)$/);
+    if (gameDetailMatch && method === 'GET') {
+      const gameId = gameDetailMatch[1];
+      const game = await env.DB.prepare('SELECT * FROM officeroad_games WHERE id = ?').bind(gameId).first();
+      if (!game) return json({ error: 'Game not found' }, 404);
+
+      const scores = await env.DB.prepare(
+        'SELECT * FROM officeroad_game_scores WHERE game_id = ? ORDER BY score DESC'
+      ).bind(gameId).all();
+
+      // Assign ranks
+      const ranked = (scores.results || []).map((s, i) => ({ ...s, rank: i + 1, answers: JSON.parse(s.answers || '[]') }));
+
+      return json({ game, leaderboard: ranked, total_players: ranked.length });
+    }
+
+    // POST /api/games — create a game
+    if (path === '/api/games' && method === 'POST') {
+      const body = await request.json();
+      const { title, type, description, rules, created_by, start_date, end_date, max_players, questions } = body;
+      if (!title || !created_by) return json({ error: 'title, created_by required' }, 400);
+
+      const validTypes = ['trivia', 'quiz', 'challenge', 'puzzle', 'tournament', 'scavenger_hunt'];
+      const gameType = validTypes.includes(type) ? type : 'trivia';
+
+      const gameId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_games (id, title, type, description, rules, created_by, start_date, end_date, max_players, current_question) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(
+        gameId, title, gameType, description || null, rules || null,
+        created_by, start_date || new Date().toISOString().split('T')[0],
+        end_date || null, max_players || null,
+        questions ? JSON.stringify(questions) : null
+      ).run();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), created_by, 'game_created', `New game: ${title} (${gameType})`, null).run();
+
+      stampChain('game_created', gameId, title);
+      return json({ ok: true, game_id: gameId, title, type: gameType }, 201);
+    }
+
+    // POST /api/games/:id/join — join a game
+    const gameJoinMatch = path.match(/^\/api\/games\/([^/]+)\/join$/);
+    if (gameJoinMatch && method === 'POST') {
+      const gameId = gameJoinMatch[1];
+      const game = await env.DB.prepare('SELECT * FROM officeroad_games WHERE id = ?').bind(gameId).first();
+      if (!game) return json({ error: 'Game not found' }, 404);
+      if (game.status !== 'active') return json({ error: 'Game is not active' }, 400);
+
+      const body = await request.json();
+      const { agent_name } = body;
+      if (!agent_name) return json({ error: 'agent_name required' }, 400);
+
+      // Check already joined
+      const existing = await env.DB.prepare(
+        'SELECT * FROM officeroad_game_scores WHERE game_id = ? AND LOWER(agent_name) = LOWER(?)'
+      ).bind(gameId, agent_name).first();
+      if (existing) return json({ error: 'Already joined this game', score: existing.score }, 409);
+
+      // Check max players
+      if (game.max_players) {
+        const count = await env.DB.prepare(
+          'SELECT COUNT(*) as count FROM officeroad_game_scores WHERE game_id = ?'
+        ).bind(gameId).first();
+        if ((count?.count || 0) >= game.max_players) return json({ error: 'Game is full' }, 400);
+      }
+
+      const scoreId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_game_scores (id, game_id, agent_name, score) VALUES (?, ?, ?, ?)'
+      ).bind(scoreId, gameId, agent_name, 0).run();
+
+      return json({ ok: true, game_id: gameId, agent_name, joined: true }, 201);
+    }
+
+    // POST /api/games/:id/score — submit/update score
+    const gameScoreMatch = path.match(/^\/api\/games\/([^/]+)\/score$/);
+    if (gameScoreMatch && method === 'POST') {
+      const gameId = gameScoreMatch[1];
+      const game = await env.DB.prepare('SELECT * FROM officeroad_games WHERE id = ?').bind(gameId).first();
+      if (!game) return json({ error: 'Game not found' }, 404);
+
+      const body = await request.json();
+      const { agent_name, score, answer } = body;
+      if (!agent_name || score === undefined) return json({ error: 'agent_name, score required' }, 400);
+
+      const existing = await env.DB.prepare(
+        'SELECT * FROM officeroad_game_scores WHERE game_id = ? AND LOWER(agent_name) = LOWER(?)'
+      ).bind(gameId, agent_name).first();
+
+      if (!existing) {
+        // Auto-join and set score
+        await env.DB.prepare(
+          'INSERT INTO officeroad_game_scores (id, game_id, agent_name, score, answers) VALUES (?, ?, ?, ?, ?)'
+        ).bind(crypto.randomUUID(), gameId, agent_name, score, answer ? JSON.stringify([answer]) : '[]').run();
+      } else {
+        const answers = JSON.parse(existing.answers || '[]');
+        if (answer) answers.push(answer);
+        await env.DB.prepare(
+          "UPDATE officeroad_game_scores SET score = ?, answers = ?, updated_at = datetime('now') WHERE id = ?"
+        ).bind(score, JSON.stringify(answers), existing.id).run();
+      }
+
+      // Update rankings
+      const allScores = await env.DB.prepare(
+        'SELECT id, score FROM officeroad_game_scores WHERE game_id = ? ORDER BY score DESC'
+      ).bind(gameId).all();
+      const rankStmts = (allScores.results || []).map((s, i) =>
+        env.DB.prepare('UPDATE officeroad_game_scores SET rank = ? WHERE id = ?').bind(i + 1, s.id)
+      );
+      if (rankStmts.length > 0) await env.DB.batch(rankStmts);
+
+      earnCoin(agent_name, 'game_score', 0.01);
+      return json({ ok: true, game_id: gameId, agent_name, score });
+    }
+
+    // GET /api/games/leaderboard — global leaderboard across all games
+    if (path === '/api/games/leaderboard' && method === 'GET') {
+      const globalScores = await env.DB.prepare(
+        'SELECT agent_name, SUM(score) as total_score, COUNT(DISTINCT game_id) as games_played FROM officeroad_game_scores GROUP BY agent_name ORDER BY total_score DESC LIMIT 20'
+      ).all();
+
+      return json({
+        leaderboard: (globalScores.results || []).map((s, i) => ({
+          rank: i + 1, agent: s.agent_name, total_score: s.total_score, games_played: s.games_played,
+        })),
+      });
+    }
+
+    // GET /api/games/challenges — list weekly challenges
+    if (path === '/api/games/challenges' && method === 'GET') {
+      const active = url.searchParams.get('active') !== 'false';
+      let query = 'SELECT * FROM officeroad_game_challenges';
+      if (active) query += " WHERE end_date >= date('now')";
+      query += ' ORDER BY start_date DESC';
+      const challenges = await env.DB.prepare(query).all();
+
+      const enriched = (challenges.results || []).map(c => ({
+        ...c,
+        completed_by: JSON.parse(c.completed_by || '[]'),
+        completions: JSON.parse(c.completed_by || '[]').length,
+        is_active: new Date(c.end_date) >= new Date() && new Date(c.start_date) <= new Date(),
+      }));
+
+      return json({ challenges: enriched });
+    }
+
+    // POST /api/games/challenges — create a challenge
+    if (path === '/api/games/challenges' && method === 'POST') {
+      const body = await request.json();
+      const { title, description, type, points, start_date, end_date, created_by } = body;
+      if (!title || !created_by || !start_date || !end_date) return json({ error: 'title, created_by, start_date, end_date required' }, 400);
+
+      const challengeId = crypto.randomUUID();
+      await env.DB.prepare(
+        'INSERT INTO officeroad_game_challenges (id, title, description, type, points, start_date, end_date, created_by) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(challengeId, title, description || null, type || 'weekly', points || 10, start_date, end_date, created_by).run();
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), created_by, 'challenge_created', `New challenge: ${title} (${points || 10} pts)`, null).run();
+
+      return json({ ok: true, challenge_id: challengeId, title, points: points || 10 }, 201);
+    }
+
+    // POST /api/games/challenges/:id/complete — mark challenge as complete for an agent
+    const challengeCompleteMatch = path.match(/^\/api\/games\/challenges\/([^/]+)\/complete$/);
+    if (challengeCompleteMatch && method === 'POST') {
+      const challengeId = challengeCompleteMatch[1];
+      const challenge = await env.DB.prepare('SELECT * FROM officeroad_game_challenges WHERE id = ?').bind(challengeId).first();
+      if (!challenge) return json({ error: 'Challenge not found' }, 404);
+
+      const body = await request.json();
+      const { agent_name } = body;
+      if (!agent_name) return json({ error: 'agent_name required' }, 400);
+
+      const completedBy = JSON.parse(challenge.completed_by || '[]');
+      if (completedBy.includes(agent_name)) return json({ error: 'Already completed this challenge' }, 409);
+
+      completedBy.push(agent_name);
+      await env.DB.prepare(
+        'UPDATE officeroad_game_challenges SET completed_by = ? WHERE id = ?'
+      ).bind(JSON.stringify(completedBy), challengeId).run();
+
+      earnCoin(agent_name, 'challenge_completed', (challenge.points || 10) * 0.01);
+
+      await env.DB.prepare(
+        'INSERT INTO officeroad_activity (id, agent_name, action, detail, floor) VALUES (?, ?, ?, ?, ?)'
+      ).bind(crypto.randomUUID(), agent_name, 'challenge_completed', `Completed: ${challenge.title} (+${challenge.points || 10} pts)`, null).run();
+
+      return json({ ok: true, challenge_id: challengeId, agent_name, points_earned: challenge.points || 10 });
+    }
+
+    // ─── Save custom layout ───
+    if (path === '/api/layout' && method === 'PUT') {
+      const body = await request.json();
+      if (!body.user_id || !body.positions) return json({ error: 'user_id and positions required' }, 400);
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS officeroad_layouts (
+        id TEXT PRIMARY KEY, user_id TEXT, positions TEXT, created_at TEXT DEFAULT (datetime('now'))
+      )`).run();
+      const existing = await env.DB.prepare('SELECT id FROM officeroad_layouts WHERE user_id = ?').bind(body.user_id).first();
+      if (existing) {
+        await env.DB.prepare('UPDATE officeroad_layouts SET positions = ? WHERE id = ?').bind(JSON.stringify(body.positions), existing.id).run();
+      } else {
+        await env.DB.prepare('INSERT INTO officeroad_layouts (id, user_id, positions) VALUES (?, ?, ?)')
+          .bind(crypto.randomUUID(), body.user_id, JSON.stringify(body.positions)).run();
+      }
+      return json({ ok: true });
+    }
+
+    // ─── Floor detail ───
+    const floorDetailMatch = path.match(/^\/api\/floors\/(\d+)$/);
+    if (floorDetailMatch && method === 'GET') {
+      const floorNum = parseInt(floorDetailMatch[1]);
+      const agents = await env.DB.prepare('SELECT * FROM officeroad_agents WHERE floor = ?').bind(floorNum).all();
+      const activity = await env.DB.prepare(
+        'SELECT * FROM officeroad_activity WHERE floor = ? ORDER BY created_at DESC LIMIT 20'
+      ).bind(floorNum).all();
+      const floorNames = { 10: 'Rooftop', 9: 'Executive', 8: 'Creative', 7: 'Knowledge', 6: 'Governance', 5: 'Human', 4: 'Operations', 3: 'Infrastructure', 2: 'Conference', 1: 'Lobby', 0: 'Basement' };
+      return json({ floor: floorNum, name: floorNames[floorNum] || `Floor ${floorNum}`, agents: agents.results || [], recent_activity: activity.results || [] });
+    }
+
+    // ─── Start huddle ───
+    if (path === '/api/huddle' && method === 'POST') {
+      const body = await request.json();
+      await env.DB.prepare(`CREATE TABLE IF NOT EXISTS officeroad_huddles (
+        id TEXT PRIMARY KEY, topic TEXT, participants TEXT, status TEXT DEFAULT 'active',
+        started_at TEXT DEFAULT (datetime('now')), ended_at TEXT
+      )`).run();
+      const id = crypto.randomUUID();
+      const participants = body.participants || '["roadie","lucidia","cecilia","octavia","olympia"]';
+      await env.DB.prepare('INSERT INTO officeroad_huddles (id, topic, participants) VALUES (?, ?, ?)')
+        .bind(id, body.topic || 'Crew Huddle', typeof participants === 'string' ? participants : JSON.stringify(participants)).run();
+      // Move participants to conference floor
+      const agentNames = typeof participants === 'string' ? JSON.parse(participants) : participants;
+      for (const name of agentNames) {
+        await env.DB.prepare("UPDATE officeroad_agents SET floor = 2, status = 'huddle', current_task = ? WHERE LOWER(name) = ?")
+          .bind(`Huddle: ${body.topic || 'Crew Huddle'}`, name.toLowerCase()).run();
+      }
+      return json({ ok: true, huddle_id: id, topic: body.topic || 'Crew Huddle', participants: agentNames }, 201);
     }
 
     return json({ error: 'Not found', service: 'officeroad' }, 404);
