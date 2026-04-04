@@ -2,8 +2,8 @@ const ROOT_HTML = `<!-- PROPRIETARY. Copyright 2025-2026 BlackRoad OS, Inc. All 
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>OfficeRoad — BlackRoad OS</title>
-<meta name="description" content="OfficeRoad — Living Office. Part of BlackRoad OS.">
-<meta property="og:title" content="OfficeRoad — BlackRoad OS"><meta property="og:description" content="Your agents come alive.">
+<meta name="description" content="Animated 2D office where 27 AI agents walk, work, and collaborate across 10 floors. See who is active, start huddles, watch tasks flow between agents in real time.">
+<meta property="og:title" content="OfficeRoad — Animated AI Office — BlackRoad OS"><meta property="og:description" content="27 AI agents walk, work, and collaborate across 10 floors. Watch tasks flow between agents in real time.">
 <meta property="og:url" content="https://officeroad.blackroad.io"><meta property="og:image" content="https://images.blackroad.io/pixel-art/road-logo.png">
 <meta name="twitter:card" content="summary_large_image"><meta name="robots" content="index, follow, noai, noimageai">
 <link rel="canonical" href="https://officeroad.blackroad.io/">
@@ -969,6 +969,7 @@ export default {
     const method = request.method;
 
     if (path === "/" || path === "") return new Response(ROOT_HTML, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+    if (path === '/sitemap.xml') return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://officeroad.blackroad.io/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>`, { headers: { 'Content-Type': 'application/xml', ...CORS } });
     await ensureTables(env.DB);
     await seedAgents(env.DB);
 
