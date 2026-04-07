@@ -54,7 +54,7 @@ textarea{min-height:80px;resize:vertical}
 .rl-item{padding:9px 0;border-bottom:1px solid #0d0d0d;display:flex;align-items:center;gap:10px;font-size:.8rem}
 .rl-item:last-child{border-bottom:none}
 .rl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.mood-colors={focused:'#3E84FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'}
+.mood-colors={focused:'#3E84FF',excited:'#22c55e',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'}
 .rl-meta{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--sub)}
 @media(max-width:600px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
 </style></head><body>
@@ -86,7 +86,7 @@ textarea{min-height:80px;resize:vertical}
   </div>
   <div class="tab" id="tab-roadlog">
     <div class="ct"><span>Dev Log — from roadlog.blackroad.io</span><a href="https://roadlog.blackroad.io" target="_blank" style="color:var(--blue);font-size:.65rem;text-decoration:none">open →</a></div>
-    ${roadlog.length?roadlog.map(r=>{const moodColors:{[k:string]:string}={focused:'#3E84FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'};return`<div class="rl-item"><div class="rl-dot" style="background:${moodColors[r.mood]||'#444'}"></div><div><div style="font-size:.82rem;font-weight:600">${r.title}</div><div class="rl-meta">${r.category} · ${r.mood} · ${r.created_at?.slice(0,10)}</div></div></div>`;}).join(''):`<div style="color:var(--sub);font-size:.85rem;padding:20px 0">No entries yet. <a href="https://roadlog.blackroad.io" style="color:var(--blue)">Add one at roadlog.blackroad.io</a></div>`}
+    ${roadlog.length?roadlog.map(r=>{const moodColors:{[k:string]:string}={focused:'#3E84FF',excited:'#22c55e',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'};return`<div class="rl-item"><div class="rl-dot" style="background:${moodColors[r.mood]||'#444'}"></div><div><div style="font-size:.82rem;font-weight:600">${r.title}</div><div class="rl-meta">${r.category} · ${r.mood} · ${r.created_at?.slice(0,10)}</div></div></div>`;}).join(''):`<div style="color:var(--sub);font-size:.85rem;padding:20px 0">No entries yet. <a href="https://roadlog.blackroad.io" style="color:var(--blue)">Add one at roadlog.blackroad.io</a></div>`}
   </div>
 </div>
 </div>
