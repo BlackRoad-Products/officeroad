@@ -19,7 +19,7 @@ function page(notes: any[], roadlog: any[]): Response {
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#030303;--card:#0a0a0a;--border:#111;--text:#f0f0f0;--sub:#444;--blue:#2979FF;--grad:linear-gradient(135deg,#2979FF,#00D4FF)}
+:root{--bg:#030303;--card:#0a0a0a;--border:#111;--text:#f0f0f0;--sub:#444;--blue:#3E84FF;--grad:linear-gradient(135deg,#3E84FF,#00D6FF)}
 html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif}
 .grad-bar{height:2px;background:var(--grad)}
 .layout{display:grid;grid-template-columns:240px 1fr;min-height:calc(100vh - 2px)}
@@ -46,7 +46,7 @@ textarea{min-height:80px;resize:vertical}
 .rl-item{padding:9px 0;border-bottom:1px solid #0d0d0d;display:flex;align-items:center;gap:10px;font-size:.8rem}
 .rl-item:last-child{border-bottom:none}
 .rl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.mood-colors={focused:'#4488FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#CC00AA',curious:'#FF6B35',neutral:'#444'}
+.mood-colors={focused:'#3E84FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'}
 .rl-meta{font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--sub)}
 @media(max-width:600px){.layout{grid-template-columns:1fr}.sidebar{display:none}}
 </style></head><body>
@@ -78,7 +78,7 @@ textarea{min-height:80px;resize:vertical}
   </div>
   <div class="tab" id="tab-roadlog">
     <div class="ct"><span>Dev Log — from roadlog.blackroad.io</span><a href="https://roadlog.blackroad.io" target="_blank" style="color:var(--blue);font-size:.65rem;text-decoration:none">open →</a></div>
-    ${roadlog.length?roadlog.map(r=>{const moodColors:{[k:string]:string}={focused:'#4488FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#CC00AA',curious:'#FF6B35',neutral:'#444'};return`<div class="rl-item"><div class="rl-dot" style="background:${moodColors[r.mood]||'#444'}"></div><div><div style="font-size:.82rem;font-weight:600">${r.title}</div><div class="rl-meta">${r.category} · ${r.mood} · ${r.created_at?.slice(0,10)}</div></div></div>`;}).join(''):`<div style="color:var(--sub);font-size:.85rem;padding:20px 0">No entries yet. <a href="https://roadlog.blackroad.io" style="color:var(--blue)">Add one at roadlog.blackroad.io</a></div>`}
+    ${roadlog.length?roadlog.map(r=>{const moodColors:{[k:string]:string}={focused:'#3E84FF',excited:'#00E676',frustrated:'#FF2255',tired:'#555',proud:'#FF00D4',curious:'#FF6B2B',neutral:'#444'};return`<div class="rl-item"><div class="rl-dot" style="background:${moodColors[r.mood]||'#444'}"></div><div><div style="font-size:.82rem;font-weight:600">${r.title}</div><div class="rl-meta">${r.category} · ${r.mood} · ${r.created_at?.slice(0,10)}</div></div></div>`;}).join(''):`<div style="color:var(--sub);font-size:.85rem;padding:20px 0">No entries yet. <a href="https://roadlog.blackroad.io" style="color:var(--blue)">Add one at roadlog.blackroad.io</a></div>`}
   </div>
 </div>
 </div>
