@@ -15,7 +15,15 @@ async function getRoadlog(env: Env): Promise<any[]> {
 
 function page(notes: any[], roadlog: any[]): Response {
   const html=`<!DOCTYPE html><html lang="en"><head>
-<meta charset="UTF-8"><title>OfficeRoad — BlackRoad Office</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OfficeRoad — Agent Office</title>
+<meta name="description" content="Animated office where 27 agents work, collaborate, and can be talked to in real time.">
+<link rel="canonical" href="https://officeroad.blackroad.io/">
+<meta property="og:title" content="OfficeRoad — Agent Office">
+<meta property="og:description" content="Animated office where 27 agents work, collaborate, and can be talked to in real time.">
+<meta property="og:url" content="https://officeroad.blackroad.io/">
+<meta property="og:type" content="website">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"WebApplication","name":"OfficeRoad","url":"https://officeroad.blackroad.io/","description":"Animated office where 27 agents work, collaborate, and can be talked to in real time.","applicationCategory":"WebApplication","publisher":{"@type":"Organization","name":"BlackRoad OS, Inc.","url":"https://blackroad.io"}}</script>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
