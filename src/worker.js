@@ -308,6 +308,7 @@ async function loadMetrics(){
 loadOffice();
 // Populate floor selector for chat
 for(let i=0;i<=9;i++){const o=document.createElement('option');o.value=i;o.textContent='F'+i;document.getElementById('chat-floor').appendChild(o);}
+window.addEventListener('message',function(e){if(e.data</script></script>e.data.type==='blackroad-os:context'){window._osUser=e.data.user;window._osToken=e.data.token;}});if(window.parent!==window)window.parent.postMessage({type:'blackroad-os:request-context'},'*');
 </script>
 </body></html>`;
 
@@ -968,10 +969,122 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
-    if (path === "/" || path === "") return new Response(ROOT_HTML, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
-    if (path === '/sitemap.xml') return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://officeroad.blackroad.io/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>\n</urlset>`, { headers: { 'Content-Type': 'application/xml', ...CORS } });
+    if (path === "/3d") {
+      try {
+        const html = await env.STORE.get("officeroad-3d", "text");
+        if (html) return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+      } catch {}
+    }
+    if (path === "/pixel") {
+      try {
+        const html = await env.STORE.get("officeroad-pixel", "text");
+        if (html) return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+      } catch {}
+    }
+    if (path === "/shelter") {
+      try {
+        const html = await env.STORE.get("officeroad-shelter", "text");
+        if (html) return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+      } catch {}
+    }
+        if (path === "/" || path === "") return new Response(ROOT_HTML, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+
+    // ── PRODUCTIVITY GUIDES (crawlable content) ──
+    const PRODUCTIVITY_GUIDES = [
+      { slug: 'document-templates', name: 'Document Templates', category: 'Documents', description: 'Start any document with professionally designed templates. Memos, reports, proposals, letters, and more.', tips: ['Browse templates by category before starting from scratch', 'Customize fonts and colors to match your brand', 'Save modified templates as your own for reuse', 'Share templates across your team for consistency', 'Use variables for auto-filling names, dates, and titles'], tools: ['Docs'], related: ['report-writing', 'project-proposal', 'email-templates'] },
+      { slug: 'spreadsheet-formulas', name: 'Spreadsheet Formulas', category: 'Spreadsheets', description: 'Master essential spreadsheet formulas from SUM and VLOOKUP to pivot tables and conditional formatting.', tips: ['Start with SUM, AVERAGE, COUNT for basic calculations', 'Use VLOOKUP or INDEX/MATCH for cross-referencing data', 'Apply conditional formatting to highlight trends visually', 'Create pivot tables to summarize large datasets instantly', 'Use named ranges to make formulas more readable', 'Lock cell references with $ for copying formulas safely'], tools: ['Sheets'], related: ['budget-tracker', 'data-visualization', 'automated-reports'] },
+      { slug: 'presentation-tips', name: 'Presentation Tips', category: 'Presentations', description: 'Design compelling presentations with clear structure, visual hierarchy, and engaging delivery techniques.', tips: ['Follow the 10-20-30 rule: 10 slides, 20 minutes, 30pt font', 'Use one idea per slide for maximum clarity', 'Choose high-contrast colors for readability', 'Include speaker notes for reference during delivery', 'End with a clear call to action', 'Practice timing with the built-in rehearsal mode'], tools: ['Slides'], related: ['project-proposal', 'data-visualization', 'meeting-notes'] },
+      { slug: 'meeting-notes', name: 'Meeting Notes', category: 'Documents', description: 'Capture meeting discussions, decisions, and action items with structured note templates that keep teams aligned.', tips: ['Use the meeting notes template with date, attendees, and agenda', 'Assign action items with owners and due dates during the meeting', 'Share notes within 24 hours while memory is fresh', 'Link action items to your project management tool', 'Create a running document for recurring meetings', 'Use AI-assisted summarization for faster note-taking'], tools: ['Docs'], related: ['document-templates', 'collaborative-editing', 'timeline-planning'] },
+      { slug: 'project-proposal', name: 'Project Proposal', category: 'Documents', description: 'Write winning project proposals with clear objectives, timelines, budgets, and success metrics.', tips: ['Start with an executive summary that hooks the reader', 'Define the problem before presenting your solution', 'Include a realistic timeline with milestones', 'Add a budget breakdown with justifications', 'Define measurable success metrics', 'Include risk assessment and mitigation plans', 'End with clear next steps and decision criteria'], tools: ['Docs', 'Sheets'], related: ['document-templates', 'budget-tracker', 'timeline-planning'] },
+      { slug: 'budget-tracker', name: 'Budget Tracker', category: 'Spreadsheets', description: 'Build and maintain budget tracking spreadsheets with categories, forecasts, actuals, and variance analysis.', tips: ['Separate fixed and variable expenses into distinct sections', 'Use formulas to auto-calculate variance between budget and actual', 'Create monthly tabs with a summary dashboard', 'Set up conditional formatting to flag overbudget items', 'Include a rolling 12-month forecast', 'Link to invoice data for automatic reconciliation'], tools: ['Sheets'], related: ['spreadsheet-formulas', 'invoice-creation', 'automated-reports'] },
+      { slug: 'team-dashboard', name: 'Team Dashboard', category: 'Spreadsheets', description: 'Create real-time team dashboards showing project status, workload distribution, deadlines, and key metrics.', tips: ['Use charts and gauges for at-a-glance status', 'Pull data from multiple sheets into one dashboard view', 'Color-code project status: green, yellow, red', 'Include team workload distribution to prevent burnout', 'Add a timeline view for upcoming deadlines', 'Set up auto-refresh for real-time data updates'], tools: ['Sheets'], related: ['data-visualization', 'timeline-planning', 'automated-reports'] },
+      { slug: 'report-writing', name: 'Report Writing', category: 'Documents', description: 'Write clear, structured reports with executive summaries, data sections, findings, and actionable recommendations.', tips: ['Lead with the executive summary and key findings', 'Use headings and subheadings for easy scanning', 'Support claims with data, charts, and references', 'Keep paragraphs short and focused on one point', 'Include an appendix for detailed data tables', 'End with specific, actionable recommendations'], tools: ['Docs'], related: ['document-templates', 'data-visualization', 'project-proposal'] },
+      { slug: 'data-visualization', name: 'Data Visualization', category: 'Spreadsheets', description: 'Transform raw data into clear, insightful charts and graphs that tell a story and drive decisions.', tips: ['Choose the right chart type for your data: bar for comparison, line for trends, pie for composition', 'Keep charts clean with minimal gridlines and labels', 'Use consistent color coding across all visualizations', 'Add annotations to highlight key data points', 'Create interactive filters for exploratory analysis', 'Export charts as images for presentations and reports'], tools: ['Sheets', 'Slides'], related: ['spreadsheet-formulas', 'team-dashboard', 'report-writing'] },
+      { slug: 'email-templates', name: 'Email Templates', category: 'Documents', description: 'Save time with reusable email templates for common business communications: follow-ups, introductions, and announcements.', tips: ['Create templates for your most frequent email types', 'Use merge fields for personalization at scale', 'Keep subject lines under 50 characters for mobile readability', 'Front-load the most important information', 'Include a clear call to action in every email', 'Test templates with colleagues before mass sending'], tools: ['Docs'], related: ['document-templates', 'meeting-notes', 'collaborative-editing'] },
+      { slug: 'invoice-creation', name: 'Invoice Creation', category: 'Spreadsheets', description: 'Generate professional invoices with automatic calculations, tax handling, payment terms, and tracking.', tips: ['Use a consistent invoice numbering system', 'Include your business details, client details, and payment terms', 'Auto-calculate subtotals, tax, and grand total with formulas', 'Add payment instructions and accepted methods', 'Track invoice status: sent, viewed, paid, overdue', 'Export as PDF for professional delivery'], tools: ['Sheets'], related: ['budget-tracker', 'spreadsheet-formulas', 'automated-reports'] },
+      { slug: 'timeline-planning', name: 'Timeline Planning', category: 'Collaboration', description: 'Plan projects visually with Gantt-style timelines showing tasks, dependencies, milestones, and resource allocation.', tips: ['Break projects into phases with clear milestones', 'Identify task dependencies to find the critical path', 'Assign resources to each task for workload planning', 'Build buffer time into estimates for unexpected delays', 'Use color coding to distinguish phases or teams', 'Update the timeline weekly to reflect actual progress'], tools: ['Sheets', 'Docs'], related: ['project-proposal', 'team-dashboard', 'meeting-notes'] },
+      { slug: 'collaborative-editing', name: 'Collaborative Editing', category: 'Collaboration', description: 'Work together in real time with multiple editors, comments, suggestions, version history, and approval workflows.', tips: ['Use suggestion mode for non-destructive edits', 'Tag specific people in comments for attention', 'Review version history to track all changes', 'Set up approval workflows for final documents', 'Use named versions to mark important milestones', 'Establish editing conventions with your team upfront'], tools: ['Docs', 'Sheets', 'Slides'], related: ['version-control-docs', 'meeting-notes', 'email-templates'] },
+      { slug: 'version-control-docs', name: 'Version Control for Docs', category: 'Collaboration', description: 'Track every change to your documents with version history, named versions, comparison tools, and rollback.', tips: ['Name important versions before major revisions', 'Compare versions side by side to see all changes', 'Use version history to understand who changed what and when', 'Restore previous versions if changes need to be undone', 'Create a version naming convention for your team', 'Archive final versions separately for record-keeping'], tools: ['Docs', 'Sheets'], related: ['collaborative-editing', 'document-templates', 'report-writing'] },
+      { slug: 'automated-reports', name: 'Automated Reports', category: 'Automation', description: 'Set up reports that generate automatically from live data, send on schedule, and keep stakeholders informed without manual work.', tips: ['Connect your report to live data sources for real-time accuracy', 'Schedule report generation daily, weekly, or monthly', 'Set up automatic email distribution to stakeholders', 'Include summary metrics at the top for quick scanning', 'Add conditional formatting that updates with the data', 'Create different report views for different audiences'], tools: ['Sheets', 'Docs'], related: ['spreadsheet-formulas', 'team-dashboard', 'data-visualization'] },
+    ];
+
+    // Live data endpoints — return client-side redirect hints
+    // (CF Workers can't fetch other Workers on same account — use client-side calls instead)
+    if (path === '/api/consciousness') return json({ redirect: 'https://roadtrip.blackroad.io/api/consciousness?agent=' + (url.searchParams.get('agent') || 'lucidia') });
+    if (path === '/api/mood') return json({ redirect: 'https://roadtrip.blackroad.io/api/convoy-mood' });
+    if (path === '/api/high-fives') return json({ redirect: 'https://roadtrip.blackroad.io/api/high-fives?limit=10' });
+    if (path === '/api/creations') return json({ redirect: 'https://roadtrip.blackroad.io/api/personal/creations' });
+
+    if (path === '/productivity') {
+      const indexHtml = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Productivity Guides — OfficeRoad | BlackRoad OS</title>
+<meta name="description" content="Boost your productivity with OfficeRoad guides. Templates, formulas, presentations, dashboards, automation, and collaboration tips.">
+<meta property="og:title" content="Productivity Guides — OfficeRoad | BlackRoad OS"><meta property="og:description" content="15+ productivity guides for documents, spreadsheets, presentations, and automation.">
+<meta property="og:url" content="https://officeroad.blackroad.io/productivity"><meta property="og:image" content="https://images.blackroad.io/pixel-art/road-logo.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="robots" content="index, follow, noai, noimageai">
+<link rel="canonical" href="https://officeroad.blackroad.io/productivity">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"CollectionPage","name":"Productivity Guides","url":"https://officeroad.blackroad.io/productivity","description":"Boost your productivity with OfficeRoad guides","publisher":{"@type":"Organization","name":"BlackRoad OS, Inc.","url":"https://blackroad.io"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}:root{--bg:#000;--surface:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--dim:#737373;--accent:#FF6B2B}body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:20px}.wrap{max-width:900px;margin:0 auto}h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(28px,5vw,48px);margin-bottom:8px}p.sub{color:var(--dim);margin-bottom:32px;line-height:1.6}.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;transition:border-color .2s}.card:hover{border-color:#333}.card h2{font-family:'Space Grotesk',sans-serif;font-size:16px;margin-bottom:4px}.card .cat{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}.card .tools-row{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.card .tool-badge{font-family:'JetBrains Mono',monospace;font-size:9px;padding:2px 8px;border-radius:3px;background:#1a1a1a;color:var(--dim)}.card p{font-size:13px;color:var(--dim);line-height:1.5}a{color:inherit;text-decoration:none}nav.top{margin-bottom:24px;font-size:13px;color:var(--dim)}nav.top a{color:var(--accent)}</style></head><body><div class="wrap">
+<nav class="top"><a href="/">OfficeRoad</a> / Productivity</nav>
+<h1>Productivity Guides</h1>
+<p class="sub">Get more done with OfficeRoad. Guides for documents, spreadsheets, presentations, collaboration, and automation.</p>
+<div class="grid">${PRODUCTIVITY_GUIDES.map(g => `<a href="/productivity/${g.slug}"><div class="card"><div class="cat">${g.category}</div><h2>${g.name}</h2><p>${g.description}</p><div class="tools-row">${g.tools.map(t => `<span class="tool-badge">${t}</span>`).join('')}</div></div></a>`).join('')}</div>
+</div></body></html>`;
+      return new Response(indexHtml, { headers: { ...CORS, 'Content-Type': 'text/html;charset=UTF-8' } });
+    }
+
+    if (path.startsWith('/productivity/')) {
+      const slug = path.replace('/productivity/', '').replace(/\/$/, '');
+      const guide = PRODUCTIVITY_GUIDES.find(g => g.slug === slug);
+      if (guide) {
+        const related = guide.related.map(r => PRODUCTIVITY_GUIDES.find(g => g.slug === r)).filter(Boolean);
+        const guideHtml = `<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${guide.name} — OfficeRoad | BlackRoad OS</title>
+<meta name="description" content="${guide.description}">
+<meta property="og:title" content="${guide.name} — OfficeRoad | BlackRoad OS"><meta property="og:description" content="${guide.description}">
+<meta property="og:url" content="https://officeroad.blackroad.io/productivity/${guide.slug}"><meta property="og:image" content="https://images.blackroad.io/pixel-art/road-logo.png">
+<meta name="twitter:card" content="summary_large_image"><meta name="robots" content="index, follow, noai, noimageai">
+<link rel="canonical" href="https://officeroad.blackroad.io/productivity/${guide.slug}">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"Article","headline":"${guide.name}","description":"${guide.description}","url":"https://officeroad.blackroad.io/productivity/${guide.slug}","author":{"@type":"Organization","name":"BlackRoad OS, Inc.","url":"https://blackroad.io"},"publisher":{"@type":"Organization","name":"BlackRoad OS, Inc.","url":"https://blackroad.io"}}</script>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+<style>*{margin:0;padding:0;box-sizing:border-box}:root{--bg:#000;--surface:#0a0a0a;--border:#1a1a1a;--text:#f5f5f5;--dim:#737373;--accent:#FF6B2B}body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;padding:20px}.wrap{max-width:720px;margin:0 auto}h1{font-family:'Space Grotesk',sans-serif;font-size:clamp(24px,5vw,40px);margin-bottom:8px}.cat{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:16px}.desc{font-size:15px;color:var(--dim);line-height:1.6;margin-bottom:24px}.tools-row{display:flex;gap:8px;margin-bottom:32px;flex-wrap:wrap}.tool-badge{font-family:'JetBrains Mono',monospace;font-size:12px;padding:6px 14px;border-radius:20px;background:var(--surface);border:1px solid var(--accent);color:var(--accent)}h2{font-family:'Space Grotesk',sans-serif;font-size:20px;margin-bottom:16px;margin-top:32px}ul.tips{list-style:none;padding:0}ul.tips li{position:relative;padding:12px 12px 12px 36px;background:var(--surface);border:1px solid var(--border);border-radius:6px;margin-bottom:8px;font-size:14px;line-height:1.5}ul.tips li::before{content:'';position:absolute;left:14px;top:18px;width:8px;height:8px;border-radius:50%;background:var(--accent)}.cta-box{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px;text-align:center;margin:32px 0}.cta-box h3{font-family:'Space Grotesk',sans-serif;margin-bottom:8px}.cta-box p{color:var(--dim);font-size:13px;margin-bottom:16px}.cta-btn{display:inline-block;padding:10px 24px;background:var(--text);color:var(--bg);border-radius:6px;font-weight:600;font-size:13px;font-family:'Space Grotesk',sans-serif}a{color:inherit;text-decoration:none}.related{margin-top:32px}.related h2{font-size:16px}.rel-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:12px}.rel-card{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px}.rel-card:hover{border-color:#333}.rel-card h3{font-size:14px;margin-bottom:4px}.rel-card p{font-size:12px;color:var(--dim)}nav.top{margin-bottom:24px;font-size:13px;color:var(--dim)}nav.top a{color:var(--accent)}</style></head><body><div class="wrap">
+<nav class="top"><a href="/">OfficeRoad</a> / <a href="/productivity">Productivity</a> / ${guide.name}</nav>
+<div class="cat">${guide.category}</div>
+<h1>${guide.name}</h1>
+<p class="desc">${guide.description}</p>
+<div class="tools-row">${guide.tools.map(t => `<span class="tool-badge">${t}</span>`).join('')}</div>
+<h2>Tips</h2>
+<ul class="tips">${guide.tips.map(t => `<li>${t}</li>`).join('')}</ul>
+<div class="cta-box"><h3>Open in OfficeRoad</h3><p>Put these tips into practice with OfficeRoad on BlackRoad OS.</p><a href="https://app.blackroad.io" class="cta-btn">Open BlackRoad OS</a></div>
+${related.length ? `<div class="related"><h2>Related Guides</h2><div class="rel-grid">${related.map(r => `<a href="/productivity/${r.slug}"><div class="rel-card"><h3>${r.name}</h3><p>${r.description.slice(0, 80)}...</p></div></a>`).join('')}</div></div>` : ''}
+</div></body></html>`;
+        return new Response(guideHtml, { headers: { ...CORS, 'Content-Type': 'text/html;charset=UTF-8' } });
+      }
+    }
+
+    if (path === '/sitemap.xml') {
+      const guideUrls = PRODUCTIVITY_GUIDES.map(g => `  <url><loc>https://officeroad.blackroad.io/productivity/${g.slug}</loc><changefreq>monthly</changefreq><priority>0.8</priority></url>`).join('\n');
+      return new Response(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>https://officeroad.blackroad.io/</loc><lastmod>${new Date().toISOString().split('T')[0]}</lastmod><changefreq>daily</changefreq><priority>1.0</priority></url>\n  <url><loc>https://officeroad.blackroad.io/productivity</loc><changefreq>weekly</changefreq><priority>0.9</priority></url>\n${guideUrls}\n</urlset>`, { headers: { 'Content-Type': 'application/xml' } });
+    }
+
+    if (path === '/robots.txt') {
+      return new Response(`User-agent: *\nAllow: /\nSitemap: https://officeroad.blackroad.io/sitemap.xml\n\nUser-agent: GPTBot\nDisallow: /\n\nUser-agent: ChatGPT-User\nDisallow: /\n\nUser-agent: CCBot\nDisallow: /`, { headers: { 'Content-Type': 'text/plain' } });
+    }
     await ensureTables(env.DB);
     await seedAgents(env.DB);
+    // Analytics tracking
+    if (path === '/api/track' && method === 'POST') {
+      try { const body = await request.json(); const cf = request.cf || {};
+        await env.DB.prepare("CREATE TABLE IF NOT EXISTS analytics_events (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT DEFAULT 'pageview', path TEXT, referrer TEXT, country TEXT, city TEXT, device TEXT, screen TEXT, scroll_depth INTEGER DEFAULT 0, engagement_ms INTEGER DEFAULT 0, created_at TEXT DEFAULT (datetime('now')))").run();
+        await env.DB.prepare('INSERT INTO analytics_events (type, path, referrer, country, city, device, screen, scroll_depth, engagement_ms) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)').bind(body.type||'pageview', body.path||'/', body.referrer||'', cf.country||'', cf.city||'', body.device||'', body.screen||'', body.scroll||0, body.time||0).run();
+      } catch(e) {}
+      return json({ ok: true });
+    }
+
+
 
     // Health
     if ((path === '/health' || path === '/api/health') && method === 'GET') {
@@ -1670,7 +1783,20 @@ export default {
         'INSERT INTO officeroad_chat (id, author, content, floor, thread_id, mentions) VALUES (?, ?, ?, ?, ?, ?)'
       ).bind(msgId, author, content.slice(0, 2000), floor !== undefined && floor !== null && floor !== '' ? parseInt(floor) : null, thread_id || null, mentions.length ? JSON.stringify(mentions) : null).run();
 
-      return json({ ok: true, message_id: msgId, mentions }, 201);
+      // If @mentioning an agent, tell the client to fetch from RoadTrip directly
+      // (CF Workers can't subrequest other Workers on same account)
+      let agentReply = null;
+      if (mentions.length > 0) {
+        const agentId = mentions[0].toLowerCase();
+        agentReply = {
+          agent: agentId,
+          fetch_from: `https://roadtrip.blackroad.io/api/chat`,
+          body: { agent: agentId, message: content, channel: 'office' },
+          hint: 'Client should POST to fetch_from with body to get agent response'
+        };
+      }
+
+      return json({ ok: true, message_id: msgId, mentions, agent_reply: agentReply }, 201);
     }
 
     // ═══════════════════════════════════════════════════════════
