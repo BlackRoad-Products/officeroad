@@ -1,6 +1,7 @@
 const ROOT_HTML = `<!-- PROPRIETARY. Copyright 2025-2026 BlackRoad OS, Inc. All rights reserved. NOT open source. -->
 <!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://images.blackroad.io/brand/brand.css">
 <title>OfficeRoad — BlackRoad OS</title>
 <meta name="description" content="Animated 2D office where 27 AI agents walk, work, and collaborate across 10 floors. See who is active, start huddles, watch tasks flow between agents in real time.">
 <meta property="og:title" content="OfficeRoad — Animated AI Office — BlackRoad OS"><meta property="og:description" content="27 AI agents walk, work, and collaborate across 10 floors. Watch tasks flow between agents in real time.">
@@ -988,7 +989,8 @@ export default {
       try {
         const js = await env.STORE.get("pixi-office-app", "text");
         if (js) {
-          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OfficeRoad Live</title><style>*{margin:0;padding:0}body{background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh;image-rendering:pixelated}</style></head><body><canvas id="officeCanvas" width="900" height="600"></canvas><div id="connectionStatus" style="position:fixed;top:8px;right:8px;font:10px monospace;color:#666"></div><div id="agentDetail" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);color:#fff;font:12px sans-serif;padding:8px;display:none"></div><div id="sessionPanel" style="display:none"></div><script>${js}</script></body></html>`;
+          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://images.blackroad.io/brand/brand.css"><title>OfficeRoad Live</title><style>*{margin:0;padding:0}body{background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh;image-rendering:pixelated}</style></head><body><canvas id="officeCanvas" width="900" height="600"></canvas><div id="connectionStatus" style="position:fixed;top:8px;right:8px;font:10px monospace;color:#666"></div><div id="agentDetail" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);color:#fff;font:12px sans-serif;padding:8px;display:none"></div><div id="sessionPanel" style="display:none"></div><script>${js}</script></body></html>`;
           return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
         }
       } catch {}
@@ -1042,6 +1044,7 @@ export default {
     if (path === '/productivity') {
       const indexHtml = `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://images.blackroad.io/brand/brand.css">
 <title>Productivity Guides — OfficeRoad | BlackRoad OS</title>
 <meta name="description" content="Boost your productivity with OfficeRoad guides. Templates, formulas, presentations, dashboards, automation, and collaboration tips.">
 <meta property="og:title" content="Productivity Guides — OfficeRoad | BlackRoad OS"><meta property="og:description" content="15+ productivity guides for documents, spreadsheets, presentations, and automation.">
@@ -1066,6 +1069,7 @@ export default {
         const related = guide.related.map(r => PRODUCTIVITY_GUIDES.find(g => g.slug === r)).filter(Boolean);
         const guideHtml = `<!DOCTYPE html><html lang="en"><head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="https://images.blackroad.io/brand/brand.css">
 <title>${guide.name} — OfficeRoad | BlackRoad OS</title>
 <meta name="description" content="${guide.description}">
 <meta property="og:title" content="${guide.name} — OfficeRoad | BlackRoad OS"><meta property="og:description" content="${guide.description}">
