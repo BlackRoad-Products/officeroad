@@ -969,6 +969,30 @@ export default {
     const path = url.pathname;
     const method = request.method;
 
+    // Brand template version
+    if (path === "/brand") {
+      try {
+        const html = await env.STORE.get("template-officeroad", "text");
+        if (html) return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+      } catch {}
+    }
+    // Agent takeover mode
+    if (path === "/agent-mode") {
+      try {
+        const html = await env.STORE.get("agent-mode", "text");
+        if (html) return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+      } catch {}
+    }
+    // Pixi pixel office
+    if (path === "/live") {
+      try {
+        const js = await env.STORE.get("pixi-office-app", "text");
+        if (js) {
+          const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>OfficeRoad Live</title><style>*{margin:0;padding:0}body{background:#000;overflow:hidden}canvas{display:block;width:100vw;height:100vh;image-rendering:pixelated}</style></head><body><canvas id="officeCanvas" width="900" height="600"></canvas><div id="connectionStatus" style="position:fixed;top:8px;right:8px;font:10px monospace;color:#666"></div><div id="agentDetail" style="position:fixed;bottom:0;left:0;right:0;background:rgba(0,0,0,.9);color:#fff;font:12px sans-serif;padding:8px;display:none"></div><div id="sessionPanel" style="display:none"></div><script>${js}</script></body></html>`;
+          return new Response(html, { headers: { ...CORS, "Content-Type": "text/html;charset=UTF-8" } });
+        }
+      } catch {}
+    }
     if (path === "/3d") {
       try {
         const html = await env.STORE.get("officeroad-3d", "text");
